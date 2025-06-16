@@ -25,7 +25,12 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
     FuncCallContext *funcctx;
     static int exit_code;
     static StringInfoData result;
-    
+    // Parsing variables
+    static long total_rows = -1;
+    static int total_columns = -1;
+    static long transfer_time = -1;
+    static long total_time = -1;
+
 
     if (SRF_IS_FIRSTCALL()) {
         MemoryContext oldcontext;
@@ -123,6 +128,40 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
                 appendStringInfoString(&result, buffer);
             }
             status = pclose(fp);
+
+
+            // Code de parsing
+            if (result.data != NULL) {
+                char *line, *token;
+                char *temp_data = pstrdup(result.data); // Copie pour parsing
+                
+                // Recherche "Total rows : "
+                token = strstr(temp_data, "Total rows : ");
+                if (token != NULL) {
+                    total_rows = strtol(token + strlen("Total rows : "), NULL, 10);
+                }
+                
+                // Recherche "Total columns : "
+                token = strstr(temp_data, "Total columns : ");
+                if (token != NULL) {
+                    total_columns = strtol(token + strlen("Total columns : "), NULL, 10);
+                }
+
+                // Recherche "Transfer time : Elapsed"
+                token = strstr(temp_data, "Transfert time : Elapsed");
+                if (token != NULL) {
+                    transfer_time = strtol(token + strlen("Transfert time : Elapsed="), NULL, 10);
+                }
+
+                // Recherche "Total time : Elapsed="
+                token = strstr(temp_data, "Total time : Elapsed=");
+                if (token != NULL) {
+                    total_time = strtol(token + strlen("Total time : Elapsed="), NULL, 10);
+                }
+                
+                pfree(temp_data);
+            }
+
             if (WIFEXITED(status)) {
                 exit_code = WEXITSTATUS(status);
             } else {
@@ -139,8 +178,8 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
 
     if (funcctx->call_cntr == 0) {
         TupleDesc tupdesc;
-        Datum values[2];
-        bool nulls[6] = {false, false};
+        Datum values[6];
+        bool nulls[6] = {false, false, false, false, false, false};
         HeapTuple tuple;
 
         if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
@@ -148,6 +187,10 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
 
         values[0] = Int32GetDatum(exit_code);
         values[1] = CStringGetTextDatum(result.data);
+        values[2] = Int64GetDatum(total_rows);
+        values[3] = Int32GetDatum(total_columns);
+        values[4] = Int64GetDatum(transfer_time);
+        values[5] = Int64GetDatum(total_time);
 
         tuple = heap_form_tuple(tupdesc, values, nulls);
         SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));

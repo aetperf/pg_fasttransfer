@@ -32,11 +32,14 @@ CREATE OR REPLACE FUNCTION pg_fasttransfer(
     settingsfile text DEFAULT NULL,
     mapmethod text DEFAULT NULL,
     license text DEFAULT NULL,
-    fasttransfer_path text DEFAULT NULL,
-    log_output boolean DEFAULT false -- Nouveau paramètre pour récupérer les logs
+    fasttransfer_path text DEFAULT NULL
 )
 RETURNS TABLE (
     exit_code integer, 
-    output text
+    output text,
+    total_rows bigint,
+    total_columns integer,
+    transfer_time_ms bigint,
+    total_time_ms bigint    
 ) AS 'pg_fasttransfer'
 LANGUAGE C;
