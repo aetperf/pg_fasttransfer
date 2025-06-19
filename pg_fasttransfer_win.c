@@ -1,3 +1,16 @@
+// Windows-specific includes and definitions
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <windows.h>
+#include <process.h>
+#define popen _popen
+#define pclose _pclose
+#define snprintf _snprintf
+#endif
+
 #include "postgres.h"
 #include "fmgr.h"
 #include "utils/builtins.h"
@@ -9,14 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Windows-specific includes
-#ifdef _WIN32
-#include <windows.h>
-#include <process.h>
-#define popen _popen
-#define pclose _pclose
-#define snprintf _snprintf
-#else
+#ifndef _WIN32
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
