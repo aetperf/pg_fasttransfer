@@ -7,5 +7,5 @@ RETURNS TABLE (
     total_columns integer,
     transfer_time_ms bigint,
     total_time_ms bigint    
-) AS 'pg_fasttransfer'
+) AS 'pg_fasttransfer', 'pg_fasttransfer_safe'
 LANGUAGE C;

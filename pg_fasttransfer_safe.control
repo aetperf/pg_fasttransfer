@@ -1,0 +1,5 @@
+# pg_fasttransfer_safe extension
+comment = 'Safe test version of PostgreSQL FastTransfer extension for Windows'
+default_version = '1.0'
+module_pathname = '$libdir/pg_fasttransfer'
+relocatable = true

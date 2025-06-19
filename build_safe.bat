@@ -78,8 +78,8 @@ if %errorlevel% neq 0 (
 REM Install files
 echo Installing extension files...
 copy pg_fasttransfer.dll "%PG_PKGLIB%\"
-copy pg_fasttransfer.control "%PG_SHARE%\extension\"
-copy pg_fasttransfer--1.0.sql "%PG_SHARE%\extension\"
+copy pg_fasttransfer_safe.control "%PG_SHARE%\extension\"
+copy pg_fasttransfer_safe--1.0.sql "%PG_SHARE%\extension\"
 
 echo.
 echo ============================================
@@ -88,7 +88,7 @@ echo ============================================
 echo.
 echo This version provides a minimal test function.
 echo After restarting PostgreSQL, you can test with:
-echo CREATE EXTENSION pg_fasttransfer;
+echo CREATE EXTENSION pg_fasttransfer_safe;
 echo SELECT * FROM pg_fasttransfer_safe();
 echo.
 pause
