@@ -1,29 +1,28 @@
-// Windows-specific includes and definitions
+// Minimal Windows-compatible version of pg_fasttransfer
+// This version uses only essential PostgreSQL headers to avoid Windows conflicts
+
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
+// Windows definitions must come first
 #define WIN32_LEAN_AND_MEAN
-#endif
-// Define this to prevent PostgreSQL from including problematic headers
-#define HAVE_INET_ATON 1
+#define NOMINMAX
 #include <winsock2.h>
-#include <ws2tcpip.h>
 #include <windows.h>
 #include <process.h>
 #define popen _popen
 #define pclose _pclose
-// For older Visual Studio versions that don't have snprintf
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
 #endif
 
+// PostgreSQL includes - minimal set to avoid conflicts
 #include "postgres.h"
 #include "fmgr.h"
 #include "utils/builtins.h"
 #include "lib/stringinfo.h"
-#include "executor/spi.h"
 #include "funcapi.h"
 
+// Standard C includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,7 +51,6 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
     static int total_columns = -1;
     static long transfer_time = -1;
     static long total_time = -1;
-
 
     if (SRF_IS_FIRSTCALL()) {
         MemoryContext oldcontext;
@@ -104,7 +102,11 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
             snprintf(binary_path, sizeof(binary_path), "%s/%s", pg_path, BINARY_NAME);
 #endif
         } else {
+#ifdef _WIN32
             snprintf(binary_path, sizeof(binary_path), ".\\%s", BINARY_NAME);
+#else
+            snprintf(binary_path, sizeof(binary_path), "./%s", BINARY_NAME);
+#endif
         }
 
         initStringInfo(&command);
@@ -159,31 +161,30 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
             }
             status = pclose(fp);
 
-
-            // Code de parsing
+            // Parse output for metrics
             if (result.data != NULL) {
-                char *line, *token;
-                char *temp_data = pstrdup(result.data); // Copie pour parsing
+                char *token;
+                char *temp_data = pstrdup(result.data);
                 
-                // Recherche "Total rows : "
+                // Search for "Total rows : "
                 token = strstr(temp_data, "Total rows : ");
                 if (token != NULL) {
                     total_rows = strtol(token + strlen("Total rows : "), NULL, 10);
                 }
                 
-                // Recherche "Total columns : "
+                // Search for "Total columns : "
                 token = strstr(temp_data, "Total columns : ");
                 if (token != NULL) {
                     total_columns = strtol(token + strlen("Total columns : "), NULL, 10);
                 }
 
-                // Recherche "Transfer time : Elapsed"
+                // Search for "Transfer time : Elapsed"
                 token = strstr(temp_data, "Transfert time : Elapsed");
                 if (token != NULL) {
                     transfer_time = strtol(token + strlen("Transfert time : Elapsed="), NULL, 10);
                 }
 
-                // Recherche "Total time : Elapsed="
+                // Search for "Total time : Elapsed="
                 token = strstr(temp_data, "Total time : Elapsed=");
                 if (token != NULL) {
                     total_time = strtol(token + strlen("Total time : Elapsed="), NULL, 10);
@@ -231,5 +232,4 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
     } else {
         SRF_RETURN_DONE(funcctx);
     }
-
 }

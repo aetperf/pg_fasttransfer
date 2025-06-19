@@ -1,10 +1,10 @@
 @echo off
-REM Fixed Windows build script for pg_fasttransfer extension
-REM This script addresses Windows-specific compilation issues
+REM Minimal build script using the simplified source file
+REM This avoids PostgreSQL headers that conflict with Windows
 
 echo.
 echo ============================================
-echo  Fixed Windows Build for pg_fasttransfer
+echo  Minimal Windows Build for pg_fasttransfer
 echo ============================================
 echo.
 
@@ -33,7 +33,6 @@ for /f "tokens=*" %%i in ('pg_config --includedir') do set PG_INCLUDE=%%i
 for /f "tokens=*" %%i in ('pg_config --libdir') do set PG_LIB=%%i
 for /f "tokens=*" %%i in ('pg_config --pkglibdir') do set PG_PKGLIB=%%i
 for /f "tokens=*" %%i in ('pg_config --sharedir') do set PG_SHARE=%%i
-for /f "tokens=*" %%i in ('pg_config --cflags') do set PG_CFLAGS=%%i
 
 echo PostgreSQL include server: %PG_INCLUDE_SERVER%
 echo PostgreSQL include: %PG_INCLUDE%
@@ -44,65 +43,46 @@ echo.
 
 REM Clean previous build
 echo Cleaning previous build...
-del pg_fasttransfer_win.obj >nul 2>&1
+del pg_fasttransfer_minimal.obj >nul 2>&1
 del pg_fasttransfer.dll >nul 2>&1
 del pg_fasttransfer.lib >nul 2>&1
 del pg_fasttransfer.exp >nul 2>&1
 
-REM Compile the object file with Windows-specific flags
-echo Compiling pg_fasttransfer_win.c...
-cl /c /MD /O2 /W3 /nologo ^
+REM Compile the minimal object file
+echo Compiling pg_fasttransfer_minimal.c...
+cl /c /MD /O2 /W1 /nologo ^
    /I"%PG_INCLUDE_SERVER%" ^
    /I"%PG_INCLUDE%" ^
    /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
    /DBUILDING_DLL /D_CRT_SECURE_NO_WARNINGS ^
-   /DHAVE_INET_ATON=1 /DINET_ADDRSTRLEN=16 ^
-   /wd4005 ^
-   pg_fasttransfer_win.c
+   /wd4005 /wd4996 ^
+   pg_fasttransfer_minimal.c
 
 if %errorlevel% neq 0 (
     echo ERROR: Compilation failed!
     echo.
-    echo Common issues:
-    echo - Missing PostgreSQL development headers
-    echo - Incorrect PostgreSQL version
-    echo - Missing Windows SDK
+    echo Try using the minimal version which avoids problematic headers
     pause
     exit /b 1
 )
 
-REM Link the DLL with all necessary libraries
+REM Link the DLL
 echo Linking pg_fasttransfer.dll...
 link /DLL /OUT:pg_fasttransfer.dll /nologo ^
      /LIBPATH:"%PG_LIB%" ^
-     pg_fasttransfer_win.obj ^
+     pg_fasttransfer_minimal.obj ^
      postgres.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib
 
 if %errorlevel% neq 0 (
     echo ERROR: Linking failed!
     echo.
-    echo Common issues:
-    echo - postgres.lib not found in %PG_LIB%
-    echo - Missing Visual Studio libraries
-    echo - Incorrect library paths
+    echo Make sure postgres.lib exists in %PG_LIB%
     pause
     exit /b 1
 )
 
 REM Install files
 echo Installing extension files...
-if not exist "%PG_PKGLIB%" (
-    echo ERROR: PostgreSQL package library directory not found: %PG_PKGLIB%
-    pause
-    exit /b 1
-)
-
-if not exist "%PG_SHARE%\extension" (
-    echo ERROR: PostgreSQL extension directory not found: %PG_SHARE%\extension
-    pause
-    exit /b 1
-)
-
 copy pg_fasttransfer.dll "%PG_PKGLIB%\"
 if %errorlevel% neq 0 (
     echo ERROR: Failed to copy DLL to %PG_PKGLIB%
@@ -127,7 +107,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ============================================
-echo  Build and installation completed!
+echo  Minimal build completed successfully!
 echo ============================================
 echo.
 echo Files installed:
@@ -136,10 +116,8 @@ echo - %PG_SHARE%\extension\pg_fasttransfer.control
 echo - %PG_SHARE%\extension\pg_fasttransfer--1.0.sql
 echo.
 echo Next steps:
-echo 1. Restart PostgreSQL service:
-echo    net stop postgresql-x64-17
-echo    net start postgresql-x64-17
-echo 2. Connect to your database
+echo 1. Restart PostgreSQL service
+echo 2. Connect to your database  
 echo 3. Run: CREATE EXTENSION pg_fasttransfer;
 echo.
 pause
