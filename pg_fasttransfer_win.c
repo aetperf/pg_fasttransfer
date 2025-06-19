@@ -3,20 +3,37 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-// Define networking constants to prevent PostgreSQL from including problematic headers
+
+// Include Windows networking headers first
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <process.h>
+
+// Comprehensive networking defines to prevent PostgreSQL from including Unix headers
 #define HAVE_INET_ATON 1
-#define HAVE_INET_NTOP 1
+#define HAVE_INET_NTOP 1 
 #define HAVE_INET_PTON 1
+#define HAVE_GETADDRINFO 1
+#define HAVE_GETNAMEINFO 1
+#define HAVE_GAI_STRERROR 1
+#define HAVE_STRUCT_SOCKADDR_STORAGE 1
+#define HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY 1
+#define HAVE_STRUCT_ADDRINFO 1
+
+// Define networking constants
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16
 #endif
 #ifndef INET6_ADDRSTRLEN
 #define INET6_ADDRSTRLEN 46
 #endif
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-#include <process.h>
+
+// Prevent inclusion of Unix networking headers
+#define _NETINET_IN_H_
+#define _SYS_SOCKET_H_
+#define _ARPA_INET_H_
+
 #define popen _popen
 #define pclose _pclose
 // For older Visual Studio versions that don't have snprintf
