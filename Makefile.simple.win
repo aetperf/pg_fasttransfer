@@ -1,0 +1,12 @@
+# Simple Windows Makefile for pg_fasttransfer extension
+# Use with: nmake /f Makefile.simple.win
+
+EXTENSION = pg_fasttransfer
+MODULE_big = pg_fasttransfer
+OBJS = pg_fasttransfer_win.obj
+DATA = pg_fasttransfer--1.0.sql
+PG_CONFIG = pg_config
+
+# Use PGXS
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)

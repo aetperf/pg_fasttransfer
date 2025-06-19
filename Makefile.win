@@ -2,27 +2,23 @@
 # Use with: nmake /f Makefile.win
 
 EXTENSION = pg_fasttransfer
-MODULES = pg_fasttransfer
+MODULE_big = pg_fasttransfer
+OBJS = pg_fasttransfer_win.obj
 DATA = pg_fasttransfer--1.0.sql
+
 PG_CONFIG = pg_config.exe
 
-# Get PostgreSQL configuration
-!IF [$(PG_CONFIG) --pgxs > pgxs_path.tmp 2>NUL] == 0
-!INCLUDE pgxs_path.tmp
+# Get PGXS path using a temporary batch file
+!IF [echo PGXS_PATH = > temp_pgxs.mak && $(PG_CONFIG) --pgxs >> temp_pgxs.mak] == 0
+!INCLUDE temp_pgxs.mak
+!INCLUDE $(PGXS_PATH)
 !ENDIF
 
-# Windows-specific compiler flags
-CFLAGS = /W3 /MD /O2 /DWIN32 /D_WINDOWS
-LDFLAGS = 
-
-# Include PostgreSQL build system
-!INCLUDE $(PGXS)
-
-# Clean up temporary files
+# Clean target
 clean:
-	@if exist *.obj del *.obj
-	@if exist *.dll del *.dll
-	@if exist *.lib del *.lib
-	@if exist *.exp del *.exp
-	@if exist *.pdb del *.pdb
-	@if exist pgxs_path.tmp del pgxs_path.tmp
+	-del *.obj 2>nul
+	-del *.dll 2>nul  
+	-del *.lib 2>nul
+	-del *.exp 2>nul
+	-del *.pdb 2>nul
+	-del temp_pgxs.mak 2>nul
