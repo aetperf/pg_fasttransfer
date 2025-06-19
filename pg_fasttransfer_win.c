@@ -163,7 +163,7 @@ pg_fasttransfer(PG_FUNCTION_ARGS)
 
             // Code de parsing
             if (result.data != NULL) {
-                char *line, *token;
+                char *token;
                 char *temp_data = pstrdup(result.data); // Copie pour parsing
                 
                 // Recherche "Total rows : "
