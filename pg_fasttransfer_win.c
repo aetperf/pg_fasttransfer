@@ -10,46 +10,6 @@
 #include <windows.h>
 #include <process.h>
 
-// Comprehensive networking defines to prevent PostgreSQL from including Unix headers
-#define HAVE_INET_ATON 1
-#define HAVE_INET_NTOP 1 
-#define HAVE_INET_PTON 1
-#define HAVE_GETADDRINFO 1
-#define HAVE_GETNAMEINFO 1
-#define HAVE_GAI_STRERROR 1
-#define HAVE_STRUCT_SOCKADDR_STORAGE 1
-#define HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY 1
-#define HAVE_STRUCT_ADDRINFO 1
-
-// Critical: Tell PostgreSQL we DON'T have netinet/in.h
-#ifdef HAVE_NETINET_IN_H
-#undef HAVE_NETINET_IN_H
-#endif
-
-// Define networking constants
-#ifndef INET_ADDRSTRLEN
-#define INET_ADDRSTRLEN 16
-#endif
-#ifndef INET6_ADDRSTRLEN
-#define INET6_ADDRSTRLEN 46
-#endif
-
-// Provide the types that would normally come from netinet/in.h
-typedef uint32_t in_addr_t;
-typedef uint16_t in_port_t;
-
-#ifndef INADDR_ANY
-#define INADDR_ANY 0x00000000
-#endif
-#ifndef INADDR_LOOPBACK  
-#define INADDR_LOOPBACK 0x7f000001
-#endif
-
-// Prevent inclusion of Unix networking headers
-#define _NETINET_IN_H_
-#define _SYS_SOCKET_H_
-#define _ARPA_INET_H_
-
 #define popen _popen
 #define pclose _pclose
 // For older Visual Studio versions that don't have snprintf
