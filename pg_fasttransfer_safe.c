@@ -164,13 +164,27 @@ pg_fasttransfer_safe(PG_FUNCTION_ARGS)
     
     strncat(command, " 2>&1", sizeof(command) - strlen(command) - 1);
     
+    // Add debug information to command output
+    char debug_info[2048];
+    snprintf(debug_info, sizeof(debug_info), 
+        "DEBUG: Executing command: %s\n"
+        "DEBUG: Current user: %s\n"
+        "DEBUG: Working directory: %s\n"
+        "DEBUG: Command length: %zu\n\n",
+        command,
+        getenv("USERNAME") ? getenv("USERNAME") : "unknown",
+        getenv("CD") ? getenv("CD") : "unknown",
+        strlen(command));
+    
+    strncpy(result_buffer, debug_info, sizeof(result_buffer) - 1);
+    
     // Execute command
     fp = popen(command, "r");
     if (!fp) {
-        strncpy(result_buffer, "Error: unable to execute FastTransfer.\n", sizeof(result_buffer) - 1);
+        strncat(result_buffer, "Error: unable to execute FastTransfer.\n", sizeof(result_buffer) - strlen(result_buffer) - 1);
         exit_code = -1;
     } else {
-        size_t result_len = 0;
+        size_t result_len = strlen(result_buffer);
         while (fgets(buffer, sizeof(buffer), fp) != NULL && result_len < sizeof(result_buffer) - 1) {
             size_t buf_len = strlen(buffer);
             if (result_len + buf_len < sizeof(result_buffer) - 1) {
