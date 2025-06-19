@@ -178,6 +178,18 @@ pg_fasttransfer_safe(PG_FUNCTION_ARGS)
     
     strncpy(result_buffer, debug_info, sizeof(result_buffer) - 1);
     
+    // Set working directory to FastTransfer location if possible
+#ifdef _WIN32
+    char *last_slash = strrchr(binary_path, '\\');
+    if (last_slash) {
+        char work_dir[1024];
+        size_t dir_len = last_slash - binary_path;
+        strncpy(work_dir, binary_path, dir_len);
+        work_dir[dir_len] = '\0';
+        SetCurrentDirectory(work_dir);
+    }
+#endif
+    
     // Execute command
     fp = popen(command, "r");
     if (!fp) {
