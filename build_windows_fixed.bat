@@ -76,8 +76,9 @@ REM Link the DLL with all necessary libraries
 echo Linking pg_fasttransfer.dll...
 link /DLL /OUT:pg_fasttransfer.dll /nologo ^
      /LIBPATH:"%PG_LIB%" ^
+     /FORCE:UNRESOLVED ^
      pg_fasttransfer_win.obj ^
-     postgres.lib pgcommon.lib pgport.lib ^
+     postgres.lib ^
      ws2_32.lib kernel32.lib user32.lib advapi32.lib shell32.lib
 
 if %errorlevel% neq 0 (
