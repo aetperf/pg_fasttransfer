@@ -8,7 +8,10 @@
 #include <process.h>
 #define popen _popen
 #define pclose _pclose
+// For older Visual Studio versions that don't have snprintf
+#if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #endif
 
 #include "postgres.h"
