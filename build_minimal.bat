@@ -55,6 +55,7 @@ cl /c /MD /O2 /W1 /nologo ^
    /I"%PG_INCLUDE%" ^
    /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
    /DBUILDING_DLL /D_CRT_SECURE_NO_WARNINGS ^
+   /DHAVE_NETINET_IN_H=0 ^
    /wd4005 /wd4996 ^
    pg_fasttransfer_win.c
 

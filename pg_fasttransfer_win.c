@@ -21,12 +21,28 @@
 #define HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY 1
 #define HAVE_STRUCT_ADDRINFO 1
 
+// Critical: Tell PostgreSQL we DON'T have netinet/in.h
+#ifdef HAVE_NETINET_IN_H
+#undef HAVE_NETINET_IN_H
+#endif
+
 // Define networking constants
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16
 #endif
 #ifndef INET6_ADDRSTRLEN
 #define INET6_ADDRSTRLEN 46
+#endif
+
+// Provide the types that would normally come from netinet/in.h
+typedef uint32_t in_addr_t;
+typedef uint16_t in_port_t;
+
+#ifndef INADDR_ANY
+#define INADDR_ANY 0x00000000
+#endif
+#ifndef INADDR_LOOPBACK  
+#define INADDR_LOOPBACK 0x7f000001
 #endif
 
 // Prevent inclusion of Unix networking headers

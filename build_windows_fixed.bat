@@ -57,6 +57,7 @@ cl /c /MD /O2 /W3 /nologo ^
    /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
    /DBUILDING_DLL /D_CRT_SECURE_NO_WARNINGS ^
    /DHAVE_INET_ATON=1 /DINET_ADDRSTRLEN=16 ^
+   /DHAVE_NETINET_IN_H=0 ^
    /wd4005 ^
    pg_fasttransfer_win.c
 
