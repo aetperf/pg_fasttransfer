@@ -3,8 +3,16 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-// Define this to prevent PostgreSQL from including problematic headers
+// Define networking constants to prevent PostgreSQL from including problematic headers
 #define HAVE_INET_ATON 1
+#define HAVE_INET_NTOP 1
+#define HAVE_INET_PTON 1
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN 16
+#endif
+#ifndef INET6_ADDRSTRLEN
+#define INET6_ADDRSTRLEN 46
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>

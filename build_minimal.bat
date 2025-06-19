@@ -43,20 +43,20 @@ echo.
 
 REM Clean previous build
 echo Cleaning previous build...
-del pg_fasttransfer_minimal.obj >nul 2>&1
+del pg_fasttransfer_win.obj >nul 2>&1
 del pg_fasttransfer.dll >nul 2>&1
 del pg_fasttransfer.lib >nul 2>&1
 del pg_fasttransfer.exp >nul 2>&1
 
-REM Compile the minimal object file
-echo Compiling pg_fasttransfer_minimal.c...
+REM Compile the Windows-specific object file
+echo Compiling pg_fasttransfer_win.c...
 cl /c /MD /O2 /W1 /nologo ^
    /I"%PG_INCLUDE_SERVER%" ^
    /I"%PG_INCLUDE%" ^
    /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
    /DBUILDING_DLL /D_CRT_SECURE_NO_WARNINGS ^
    /wd4005 /wd4996 ^
-   pg_fasttransfer_minimal.c
+   pg_fasttransfer_win.c
 
 if %errorlevel% neq 0 (
     echo ERROR: Compilation failed!
@@ -70,7 +70,7 @@ REM Link the DLL
 echo Linking pg_fasttransfer.dll...
 link /DLL /OUT:pg_fasttransfer.dll /nologo ^
      /LIBPATH:"%PG_LIB%" ^
-     pg_fasttransfer_minimal.obj ^
+     pg_fasttransfer_win.obj ^
      postgres.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib
 
 if %errorlevel% neq 0 (
