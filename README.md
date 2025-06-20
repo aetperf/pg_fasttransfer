@@ -7,10 +7,39 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 ## Prerequisites
 
 - PostgreSQL installed with development headers
-- C compiler (gcc/clang on Linux, Microsoft C compiler on Windows)
-- Make (Linux)
-- On Windows: **x64 Native Tools Command Prompt for VS 2022** with C/C++ build tools (`cl.exe`, `link.exe`)
 - Administrator privileges (sudo on Linux, appropriate rights on Windows)
+
+### Linux
+
+* `gcc` or `clang` (C compiler)
+* `make`
+
+
+---
+
+### Windows
+
+You need to install the **C/C++ compiler** and required build tools using **Build Tools for Visual Studio 2022**.
+
+#### Required Workload
+
+* **C++ build tools** (main workload)
+
+#### Individual Components to Select
+
+| Component Group      | Specific Items to Select                                                  | Description                                     |
+| -------------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
+| **MSVC Compiler**    | ✅ *MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)*                  | The core C++ compiler                           |
+| **Windows SDK**      | ✅ *Windows 10 SDK (10.0.19041.0)* or *Windows 11 SDK*                     | Headers and libraries                           |
+| **Additional Tools** | ✅ *CMake tools for Visual Studio*<br>✅ *MSBuild support for LLVM toolset* | Optional, but helpful for broader compatibility |
+
+#### Installation Steps
+
+1. Download **[Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/visual-cpp-build-tools/)** from the official Microsoft website.
+2. Launch the installer.
+3. Select the **C++ build tools** workload.
+4. On the right-hand panel, check the individual components listed above.
+5. Install.
 
 ---
 
