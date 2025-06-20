@@ -4,6 +4,30 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 ---
 
+## Table of Contents
+
+- [pg_fasttransfer](#pg_fasttransfer)
+- [Prerequisites](#prerequisites)
+  - [Linux](#linux)
+  - [Windows](#windows)
+    - [Required Workload](#required-workload)
+    - [Individual Components to Select](#individual-components-to-select)
+    - [Installation Steps](#installation-steps)
+- [Installation](#installation)
+  - [Linux](#linux-1)
+  - [Windows](#windows-1)
+- [SQL Setup](#sql-setup)
+  - [Drop existing extension](#drop-existing-extension-if-any)
+  - [Create the extension](#create-the-extension)
+- [Main Function Usage](#main-function-usage)
+  - [Linux example](#linux-exemple)
+  - [Windows example](#windows-exemple)
+- [Function Return Structure](#function-return-structure)
+- [Notes](#notes)
+
+
+---
+
 ## Prerequisites
 
 - PostgreSQL installed with development headers
