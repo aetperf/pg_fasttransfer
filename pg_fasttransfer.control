@@ -1,6 +1,5 @@
-# pg_fasttransfer.control
-
-comment = 'PostgreSQL wrapper for FastTransfer executable'
+# pg_fasttransfer extension
+comment = 'PostgreSQL FastTransfer extension'
 default_version = '1.0'
 module_pathname = '$libdir/pg_fasttransfer'
 relocatable = true

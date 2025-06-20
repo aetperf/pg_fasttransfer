@@ -1,3 +1,4 @@
+-- Safe version of pg_fasttransfer function with full parameter support
 CREATE OR REPLACE FUNCTION pg_fasttransfer(
     sourceconnectiontype text DEFAULT NULL,
     sourceconnectstring text DEFAULT NULL,
