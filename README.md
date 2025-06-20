@@ -6,7 +6,6 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 ## Table of Contents
 
-- [pg_fasttransfer](#pg_fasttransfer)
 - [Prerequisites](#prerequisites)
   - [Linux](#linux)
   - [Windows](#windows)
