@@ -260,7 +260,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 // Décryptage du mot de passe uniquement si nécessaire
                 text *enc = PG_GETARG_TEXT_PP(i);
                 char *enc_cstr = text_to_cstring(enc);  // Convertit text * en char *
-                elog(NOTICE, "Attempting to decrypt password for %s, encrypted: '%.50s%s'", 
+                elog(ERROR, "DEBUG: Attempting to decrypt password for %s, encrypted: '%.50s%s'", 
                      arg_names[i], enc_cstr, strlen(enc_cstr) > 50 ? "..." : "");
                 char *decrypted = aes_decrypt_pg(enc_cstr);  // Retourne char * décrypté
                 if (decrypted == NULL) {
@@ -396,8 +396,8 @@ static void base64_encode(const uint8_t *input, int input_len, char *output, int
 
         output[j++] = base64_chars[(triple >> 18) & 0x3F];
         output[j++] = base64_chars[(triple >> 12) & 0x3F];
-        output[j++] = (i - 2) <= input_len ? base64_chars[(triple >> 6) & 0x3F] : '=';
-        output[j++] = (i - 1) <= input_len ? base64_chars[triple & 0x3F] : '=';
+        output[j++] = (i - 2) < input_len ? base64_chars[(triple >> 6) & 0x3F] : '=';
+        output[j++] = (i - 1) < input_len ? base64_chars[triple & 0x3F] : '=';
     }
     output[j] = '\0';
 }
