@@ -260,13 +260,15 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 // Décryptage du mot de passe uniquement si nécessaire
                 text *enc = PG_GETARG_TEXT_PP(i);
                 char *enc_cstr = text_to_cstring(enc);  // Convertit text * en char *
-                elog(NOTICE, "Attempting to decrypt password for %s, encrypted length: %zu", arg_names[i], strlen(enc_cstr));
+                elog(NOTICE, "Attempting to decrypt password for %s, encrypted: '%.50s%s'", 
+                     arg_names[i], enc_cstr, strlen(enc_cstr) > 50 ? "..." : "");
                 char *decrypted = aes_decrypt_pg(enc_cstr);  // Retourne char * décrypté
                 if (decrypted == NULL) {
                     elog(WARNING, "Password decryption failed for parameter %s, using original value", arg_names[i]);
                     val = enc_cstr;  // Fallback to original encrypted string
                 } else {
-                    elog(NOTICE, "Password decryption succeeded for %s, decrypted length: %zu", arg_names[i], strlen(decrypted));
+                    elog(NOTICE, "Password decrypted for %s: '%.10s%s'", 
+                         arg_names[i], decrypted, strlen(decrypted) > 10 ? "..." : "");
                     val = decrypted;  // Affecte la valeur décryptée à val
                 }
             } else {
