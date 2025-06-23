@@ -260,11 +260,13 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 // Décryptage du mot de passe uniquement si nécessaire
                 text *enc = PG_GETARG_TEXT_PP(i);
                 char *enc_cstr = text_to_cstring(enc);  // Convertit text * en char *
+                elog(NOTICE, "Attempting to decrypt password for %s, encrypted length: %zu", arg_names[i], strlen(enc_cstr));
                 char *decrypted = aes_decrypt_pg(enc_cstr);  // Retourne char * décrypté
                 if (decrypted == NULL) {
                     elog(WARNING, "Password decryption failed for parameter %s, using original value", arg_names[i]);
                     val = enc_cstr;  // Fallback to original encrypted string
                 } else {
+                    elog(NOTICE, "Password decryption succeeded for %s, decrypted length: %zu", arg_names[i], strlen(decrypted));
                     val = decrypted;  // Affecte la valeur décryptée à val
                 }
             } else {
@@ -284,6 +286,24 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     
     strncat(command, " 2>&1", sizeof(command) - strlen(command) - 1);
+    
+    // Debug: log the command being executed (mask passwords)
+    char debug_command[8192];
+    strncpy(debug_command, command, sizeof(debug_command) - 1);
+    debug_command[sizeof(debug_command) - 1] = '\0';
+    // Simple password masking - replace content between quotes after password parameters
+    char *pos = debug_command;
+    while ((pos = strstr(pos, "--sourcepassword")) != NULL || (pos = strstr(pos, "--targetpassword")) != NULL) {
+        pos = strchr(pos, '"');
+        if (pos) {
+            pos++; // Skip opening quote
+            char *end = strchr(pos, '"');
+            if (end) {
+                while (pos < end) *pos++ = '*';
+            }
+        }
+    }
+    elog(NOTICE, "Executing FastTransfer command: %s", debug_command);
     
     // Execute command
     fp = popen(command, "r");
