@@ -136,9 +136,13 @@ char *aes_decrypt(const char *base64_input) {
     
     if (pad_value == 0 || pad_value > 16) {
         elog(WARNING, "Invalid pad value %d, treating as legacy malformed encryption", pad_value);
-        // For legacy malformed encryption, find the null terminator manually
+        // For legacy malformed encryption, find the actual password length
+        // Look for printable characters and stop at first non-printable or null
         int actual_len = 0;
-        for (int i = 0; i < decrypted_len && decoded[i] != 0; i++) {
+        for (int i = 0; i < decrypted_len; i++) {
+            if (decoded[i] == 0 || decoded[i] < 32 || decoded[i] > 126) {
+                break;  // Stop at null or non-printable character
+            }
             actual_len = i + 1;
         }
         if (actual_len == 0) {
