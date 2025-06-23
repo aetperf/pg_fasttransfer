@@ -80,7 +80,7 @@ static int base64_decode(const char *input, uint8_t *output, int output_len) {
 }
 
 // Fonction de déchiffrement compatible avec aes_encrypt_pg
-char *aes_decrypt_pg(const char *base64_input) {
+char *aes_decrypt(const char *base64_input) {
     // Clé AES-256 utilisée dans aes_encrypt_pg
     const uint8_t key[32] = {
         0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
@@ -262,7 +262,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 char *enc_cstr = text_to_cstring(enc);  // Convertit text * en char *
                 elog(ERROR, "DEBUG: Attempting to decrypt password for %s, encrypted: '%.50s%s'", 
                      arg_names[i], enc_cstr, strlen(enc_cstr) > 50 ? "..." : "");
-                char *decrypted = aes_decrypt_pg(enc_cstr);  // Retourne char * décrypté
+                char *decrypted = aes_decrypt(enc_cstr);  // Retourne char * décrypté
                 if (decrypted == NULL) {
                     elog(WARNING, "Password decryption failed for parameter %s, using original value", arg_names[i]);
                     val = enc_cstr;  // Fallback to original encrypted string
@@ -450,15 +450,15 @@ aes_encrypt_pg(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
-PG_FUNCTION_INFO_V1(aes_decrypt_pg_sql);
+PG_FUNCTION_INFO_V1(aes_decrypt_pg);
 
 PGDLLEXPORT Datum
-aes_decrypt_pg_sql(PG_FUNCTION_ARGS)
+aes_decrypt_pg(PG_FUNCTION_ARGS)
 {
     text *input_text = PG_GETARG_TEXT_PP(0);
     char *input_cstr = text_to_cstring(input_text);
     
-    char *decrypted = aes_decrypt_pg(input_cstr);
+    char *decrypted = aes_decrypt(input_cstr);
     if (decrypted == NULL) {
         PG_RETURN_NULL();
     }
