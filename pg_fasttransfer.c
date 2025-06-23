@@ -97,7 +97,13 @@ char *aes_decrypt_pg(const char *base64_input) {
     if (!decoded) return NULL;
 
     int decrypted_len = base64_decode(base64_input, decoded, decoded_max_len);
-    if (decrypted_len <= 0 || decrypted_len % 16 != 0) {
+    if (decrypted_len <= 0) {
+        elog(WARNING, "Base64 decode failed, length: %d", decrypted_len);
+        free(decoded);
+        return NULL;
+    }
+    if (decrypted_len % 16 != 0) {
+        elog(WARNING, "Decoded length not multiple of 16: %d", decrypted_len);
         free(decoded);
         return NULL;
     }
@@ -255,7 +261,12 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 text *enc = PG_GETARG_TEXT_PP(i);
                 char *enc_cstr = text_to_cstring(enc);  // Convertit text * en char *
                 char *decrypted = aes_decrypt_pg(enc_cstr);  // Retourne char * décrypté
-                val = decrypted;  // Affecte la valeur décryptée à val
+                if (decrypted == NULL) {
+                    elog(WARNING, "Password decryption failed for parameter %s, using original value", arg_names[i]);
+                    val = enc_cstr;  // Fallback to original encrypted string
+                } else {
+                    val = decrypted;  // Affecte la valeur décryptée à val
+                }
             } else {
                 val = text_to_cstring(PG_GETARG_TEXT_PP(i));  // Si ce n'est pas un mot de passe, on récupère directement la valeur
             }
