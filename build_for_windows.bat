@@ -40,11 +40,12 @@ echo.
 REM Clean previous build
 echo Cleaning previous build...
 del pg_fasttransfer.obj >nul 2>&1
+del aes.obj >nul 2>&1
 del pg_fasttransfer.dll >nul 2>&1
 del pg_fasttransfer.lib >nul 2>&1
 del pg_fasttransfer.exp >nul 2>&1
 
-REM Compile the object file
+REM Compile pg_fasttransfer.c
 echo Compiling pg_fasttransfer.c...
 cl /c /MD /O2 /W1 /nologo ^
    /I. ^
@@ -56,7 +57,22 @@ cl /c /MD /O2 /W1 /nologo ^
    pg_fasttransfer.c
 
 if %errorlevel% neq 0 (
-    echo ERROR: Compilation failed!
+    echo ERROR: Compilation of pg_fasttransfer.c failed!
+    pause
+    exit /b 1
+)
+
+REM Compile tiny-aes/aes.c
+echo Compiling tiny-aes/aes.c...
+cl /c /MD /O2 /W1 /nologo ^
+   /I. ^
+   /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
+   /D_CRT_SECURE_NO_WARNINGS ^
+   /wd4005 /wd4996 ^
+   tiny_aes.c
+
+if %errorlevel% neq 0 (
+    echo ERROR: Compilation of aes.c failed!
     pause
     exit /b 1
 )
@@ -66,6 +82,7 @@ echo Linking pg_fasttransfer.dll...
 link /DLL /OUT:pg_fasttransfer.dll /nologo ^
      /LIBPATH:"%PG_LIB%" ^
      pg_fasttransfer.obj ^
+     tiny_aes.obj ^
      postgres.lib ^
      ws2_32.lib kernel32.lib user32.lib advapi32.lib
 

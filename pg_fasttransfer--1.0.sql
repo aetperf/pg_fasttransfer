@@ -1,5 +1,5 @@
 -- Safe version of pg_fasttransfer function with full parameter support
-CREATE OR REPLACE FUNCTION pg_fasttransfer(
+CREATE OR REPLACE FUNCTION xp_RunFastTransfer_secure(
     sourceconnectiontype text DEFAULT NULL,
     sourceconnectstring text DEFAULT NULL,
     sourcedsn text DEFAULT NULL,
@@ -42,5 +42,11 @@ RETURNS TABLE (
     total_columns integer,
     transfer_time_ms bigint,
     total_time_ms bigint    
-) AS 'pg_fasttransfer'
+) AS 'pg_fasttransfer','xp_RunFastTransfer_secure'
 LANGUAGE C;
+
+-- AES encryption helper (to encrypt passwords before calling xp_RunFastTransfer_secure)
+CREATE OR REPLACE FUNCTION aes_encrypt_pg(input text)
+RETURNS text
+AS 'pg_fasttransfer', 'aes_encrypt_pg'
+LANGUAGE C STRICT;
