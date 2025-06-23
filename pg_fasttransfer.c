@@ -103,19 +103,14 @@ char *aes_decrypt(const char *base64_input) {
         return NULL;
     }
     if (decrypted_len % 16 != 0) {
-        elog(WARNING, "Decoded length not multiple of 16: %d, padding to next 16-byte boundary", decrypted_len);
-        // Pad to next 16-byte boundary with zeros for compatibility with old encrypted passwords
-        int padded_len = ((decrypted_len / 16) + 1) * 16;
-        uint8_t *padded = malloc(padded_len);
-        if (!padded) {
+        elog(WARNING, "Decoded length not multiple of 16: %d, truncating to nearest 16-byte boundary", decrypted_len);
+        // For legacy compatibility: truncate to nearest 16-byte boundary (likely 16 bytes)
+        decrypted_len = (decrypted_len / 16) * 16;
+        if (decrypted_len == 0) {
+            elog(WARNING, "Data too short after truncation");
             free(decoded);
             return NULL;
         }
-        memcpy(padded, decoded, decrypted_len);
-        memset(padded + decrypted_len, 0, padded_len - decrypted_len);
-        free(decoded);
-        decoded = padded;
-        decrypted_len = padded_len;
     }
 
     struct AES_ctx ctx;
