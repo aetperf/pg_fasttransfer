@@ -54,5 +54,5 @@ LANGUAGE C STRICT;
 -- AES decryption helper (for testing encryption/decryption compatibility)
 CREATE OR REPLACE FUNCTION aes_decrypt_pg(input text)
 RETURNS text
-AS 'pg_fasttransfer', 'aes_decrypt_pg_sql'
+AS 'pg_fasttransfer', 'aes_decrypt_pg'
 LANGUAGE C STRICT;
