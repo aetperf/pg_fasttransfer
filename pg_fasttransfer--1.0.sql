@@ -50,3 +50,9 @@ CREATE OR REPLACE FUNCTION aes_encrypt_pg(input text)
 RETURNS text
 AS 'pg_fasttransfer', 'aes_encrypt_pg'
 LANGUAGE C STRICT;
+
+-- AES decryption helper (for testing encryption/decryption compatibility)
+CREATE OR REPLACE FUNCTION aes_decrypt_pg(input text)
+RETURNS text
+AS 'pg_fasttransfer', 'aes_decrypt_pg_sql'
+LANGUAGE C STRICT;

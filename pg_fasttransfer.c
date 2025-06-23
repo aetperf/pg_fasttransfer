@@ -450,6 +450,24 @@ aes_encrypt_pg(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
+PG_FUNCTION_INFO_V1(aes_decrypt_pg_sql);
+
+PGDLLEXPORT Datum
+aes_decrypt_pg_sql(PG_FUNCTION_ARGS)
+{
+    text *input_text = PG_GETARG_TEXT_PP(0);
+    char *input_cstr = text_to_cstring(input_text);
+    
+    char *decrypted = aes_decrypt_pg(input_cstr);
+    if (decrypted == NULL) {
+        PG_RETURN_NULL();
+    }
+    
+    text *result = cstring_to_text(decrypted);
+    free(decrypted);
+    PG_RETURN_TEXT_P(result);
+}
+
 
 
 
