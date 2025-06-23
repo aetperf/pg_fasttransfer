@@ -98,12 +98,11 @@ char *aes_decrypt(const char *base64_input) {
 
     int decrypted_len = base64_decode(base64_input, decoded, decoded_max_len);
     if (decrypted_len <= 0) {
-        elog(WARNING, "Base64 decode failed, length: %d", decrypted_len);
         free(decoded);
         return NULL;
     }
     if (decrypted_len % 16 != 0) {
-        elog(WARNING, "Decoded length not multiple of 16: %d, padding to next 16-byte boundary", decrypted_len);
+        // Handle legacy malformed base64 encoding
         // Pad to next 16-byte boundary, but preserve all original data
         int padded_len = ((decrypted_len + 15) / 16) * 16;  // Round up to next 16-byte boundary
         uint8_t *padded = malloc(padded_len);
@@ -126,16 +125,11 @@ char *aes_decrypt(const char *base64_input) {
     AES_init_ctx_iv(&ctx, key, iv);
     AES_CBC_decrypt_buffer(&ctx, decoded, decrypted_len);
 
-    // Debug: show first few bytes after decryption
-    elog(WARNING, "After AES decrypt, first 8 bytes: %02x %02x %02x %02x %02x %02x %02x %02x", 
-         decoded[0], decoded[1], decoded[2], decoded[3], decoded[4], decoded[5], decoded[6], decoded[7]);
-
     // Supprimer le padding PKCS#7
     uint8_t pad_value = decoded[decrypted_len - 1];
-    elog(WARNING, "PKCS#7 pad value: %d, decrypted_len: %d", pad_value, decrypted_len);
     
     if (pad_value == 0 || pad_value > 16) {
-        elog(WARNING, "Invalid pad value %d, treating as legacy malformed encryption", pad_value);
+        // Handle legacy malformed encryption
         // For legacy malformed encryption, find the actual password length
         // Look for printable characters and stop at first non-printable or null
         int actual_len = 0;
@@ -154,7 +148,7 @@ char *aes_decrypt(const char *base64_input) {
         decoded[decrypted_len - pad_value] = '\0';  // Standard PKCS#7 padding removal
     }
     
-    elog(WARNING, "Decrypted password (full): '%s' (length: %zu)", (char *)decoded, strlen((char *)decoded));
+    // Password successfully decrypted
 
     char *result = strdup((char *)decoded);
     free(decoded);
@@ -295,15 +289,12 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 // Décryptage du mot de passe uniquement si nécessaire
                 text *enc = PG_GETARG_TEXT_PP(i);
                 char *enc_cstr = text_to_cstring(enc);  // Convertit text * en char *
-                elog(WARNING, "DEBUG: Attempting to decrypt password for %s, encrypted: '%.50s%s'", 
-                     arg_names[i], enc_cstr, strlen(enc_cstr) > 50 ? "..." : "");
+                // Password decryption (debug messages removed)
                 char *decrypted = aes_decrypt(enc_cstr);  // Retourne char * décrypté
                 if (decrypted == NULL) {
                     elog(WARNING, "Password decryption failed for parameter %s, using original value", arg_names[i]);
                     val = enc_cstr;  // Fallback to original encrypted string
                 } else {
-                    elog(NOTICE, "Password decrypted for %s: '%.10s%s'", 
-                         arg_names[i], decrypted, strlen(decrypted) > 10 ? "..." : "");
                     val = decrypted;  // Affecte la valeur décryptée à val
                 }
             } else {
