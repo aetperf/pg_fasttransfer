@@ -237,6 +237,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             }
         }*/
         
+        is_int = false;
         
         if (!is_int) {
             is_password = false;
@@ -258,10 +259,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             } else {
                 val = text_to_cstring(PG_GETARG_TEXT_PP(i));  // Si ce n'est pas un mot de passe, on récupère directement la valeur
             }
-        }
-
-        if (!is_int) {
-            val = text_to_cstring(PG_GETARG_TEXT_PP(i));
         }
 
         
