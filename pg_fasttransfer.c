@@ -103,14 +103,23 @@ char *aes_decrypt(const char *base64_input) {
         return NULL;
     }
     if (decrypted_len % 16 != 0) {
-        elog(WARNING, "Decoded length not multiple of 16: %d, truncating to nearest 16-byte boundary", decrypted_len);
-        // For legacy compatibility: truncate to nearest 16-byte boundary (likely 16 bytes)
-        decrypted_len = (decrypted_len / 16) * 16;
-        if (decrypted_len == 0) {
-            elog(WARNING, "Data too short after truncation");
+        elog(WARNING, "Decoded length not multiple of 16: %d, padding to next 16-byte boundary", decrypted_len);
+        // Pad to next 16-byte boundary, but preserve all original data
+        int padded_len = ((decrypted_len + 15) / 16) * 16;  // Round up to next 16-byte boundary
+        uint8_t *padded = malloc(padded_len);
+        if (!padded) {
             free(decoded);
             return NULL;
         }
+        memcpy(padded, decoded, decrypted_len);
+        // Fill padding with the last byte value (simulating PKCS#7-like padding)
+        uint8_t pad_byte = padded_len - decrypted_len;
+        for (int i = decrypted_len; i < padded_len; i++) {
+            padded[i] = pad_byte;
+        }
+        free(decoded);
+        decoded = padded;
+        decrypted_len = padded_len;
     }
 
     struct AES_ctx ctx;
