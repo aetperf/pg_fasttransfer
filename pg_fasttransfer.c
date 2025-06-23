@@ -81,6 +81,9 @@ static int base64_decode(const char *input, uint8_t *output, int output_len) {
 
 // Fonction de déchiffrement compatible avec aes_encrypt_pg
 char *aes_decrypt(const char *base64_input) {
+    if (!base64_input || strlen(base64_input) == 0) {
+        return NULL;
+    }
     // Clé AES-256 utilisée dans aes_encrypt_pg
     const uint8_t key[32] = {
         0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
@@ -508,7 +511,7 @@ aes_decrypt_pg(PG_FUNCTION_ARGS)
     }
     
     text *result = cstring_to_text(decrypted);
-    free(decrypted);
+    free(decrypted);  // Free after copying to PostgreSQL memory
     PG_RETURN_TEXT_P(result);
 }
 
