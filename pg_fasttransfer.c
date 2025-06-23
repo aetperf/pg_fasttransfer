@@ -323,8 +323,24 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     debug_command[sizeof(debug_command) - 1] = '\0';
     // Simple password masking - replace content between quotes after password parameters
     char *pos = debug_command;
-    while ((pos = strstr(pos, "--sourcepassword")) != NULL || (pos = strstr(pos, "--targetpassword")) != NULL) {
-        pos = strchr(pos, '"');
+    char *source_pos = strstr(pos, "--sourcepassword");
+    char *target_pos = strstr(pos, "--targetpassword");
+    
+    // Mask source password
+    if (source_pos) {
+        pos = strchr(source_pos, '"');
+        if (pos) {
+            pos++; // Skip opening quote
+            char *end = strchr(pos, '"');
+            if (end) {
+                while (pos < end) *pos++ = '*';
+            }
+        }
+    }
+    
+    // Mask target password
+    if (target_pos) {
+        pos = strchr(target_pos, '"');
         if (pos) {
             pos++; // Skip opening quote
             char *end = strchr(pos, '"');
