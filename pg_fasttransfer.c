@@ -122,14 +122,22 @@ char *aes_decrypt(const char *base64_input) {
     AES_init_ctx_iv(&ctx, key, iv);
     AES_CBC_decrypt_buffer(&ctx, decoded, decrypted_len);
 
+    // Debug: show first few bytes after decryption
+    elog(WARNING, "After AES decrypt, first 8 bytes: %02x %02x %02x %02x %02x %02x %02x %02x", 
+         decoded[0], decoded[1], decoded[2], decoded[3], decoded[4], decoded[5], decoded[6], decoded[7]);
+
     // Supprimer le padding PKCS#7
     uint8_t pad_value = decoded[decrypted_len - 1];
+    elog(WARNING, "PKCS#7 pad value: %d, decrypted_len: %d", pad_value, decrypted_len);
+    
     if (pad_value == 0 || pad_value > 16) {
+        elog(WARNING, "Invalid pad value %d, returning NULL", pad_value);
         free(decoded);
         return NULL;
     }
 
     decoded[decrypted_len - pad_value] = '\0';  // Null-terminate
+    elog(WARNING, "Decrypted password (first 10 chars): %.10s", (char *)decoded);
 
     char *result = strdup((char *)decoded);
     free(decoded);
