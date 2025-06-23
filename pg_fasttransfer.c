@@ -154,7 +154,7 @@ char *aes_decrypt(const char *base64_input) {
         decoded[decrypted_len - pad_value] = '\0';  // Standard PKCS#7 padding removal
     }
     
-    elog(WARNING, "Decrypted password (first 10 chars): %.10s", (char *)decoded);
+    elog(WARNING, "Decrypted password (full): '%s' (length: %zu)", (char *)decoded, strlen((char *)decoded));
 
     char *result = strdup((char *)decoded);
     free(decoded);
