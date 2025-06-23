@@ -135,12 +135,21 @@ char *aes_decrypt(const char *base64_input) {
     elog(WARNING, "PKCS#7 pad value: %d, decrypted_len: %d", pad_value, decrypted_len);
     
     if (pad_value == 0 || pad_value > 16) {
-        elog(WARNING, "Invalid pad value %d, returning NULL", pad_value);
-        free(decoded);
-        return NULL;
+        elog(WARNING, "Invalid pad value %d, treating as legacy malformed encryption", pad_value);
+        // For legacy malformed encryption, find the null terminator manually
+        int actual_len = 0;
+        for (int i = 0; i < decrypted_len && decoded[i] != 0; i++) {
+            actual_len = i + 1;
+        }
+        if (actual_len == 0) {
+            free(decoded);
+            return NULL;
+        }
+        decoded[actual_len] = '\0';
+    } else {
+        decoded[decrypted_len - pad_value] = '\0';  // Standard PKCS#7 padding removal
     }
-
-    decoded[decrypted_len - pad_value] = '\0';  // Null-terminate
+    
     elog(WARNING, "Decrypted password (first 10 chars): %.10s", (char *)decoded);
 
     char *result = strdup((char *)decoded);
