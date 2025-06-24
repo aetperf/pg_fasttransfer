@@ -273,6 +273,10 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 is_int = true;
                 break;
             }
+        }
+
+        if (!is_int) {
+            val = text_to_cstring(PG_GETARG_TEXT_PP(i));
         }*/
         
         is_int = false;
