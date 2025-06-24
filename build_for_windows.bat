@@ -3,7 +3,7 @@ REM Build script for pg_fasttransfer extension on Windows
 
 echo.
 echo ============================================
-echo  Windows Build for pg_fasttransfer
+echo   Windows Build for pg_fasttransfer
 echo ============================================
 echo.
 
@@ -37,6 +37,7 @@ echo PostgreSQL include server: %PG_INCLUDE_SERVER%
 echo PostgreSQL lib: %PG_LIB%
 echo.
 
+
 REM Clean previous build
 echo Cleaning previous build...
 del pg_fasttransfer.obj >nul 2>&1
@@ -47,13 +48,13 @@ del pg_fasttransfer.exp >nul 2>&1
 REM Compile the object file
 echo Compiling pg_fasttransfer.c...
 cl /c /MD /O2 /W1 /nologo ^
-   /I. ^
-   /I"%PG_INCLUDE_SERVER%" ^
-   /I"%PG_INCLUDE%" ^
-   /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
-   /DBUILDING_DLL /D_CRT_SECURE_NO_WARNINGS ^
-   /wd4005 /wd4996 ^
-   pg_fasttransfer.c
+    /I. ^
+    /I"%PG_INCLUDE_SERVER%" ^
+    /I"%PG_INCLUDE%" ^
+    /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
+    /D_CRT_SECURE_NO_WARNINGS ^
+    /wd4005 /wd4996 ^
+    pg_fasttransfer.c
 
 if %errorlevel% neq 0 (
     echo ERROR: Compilation failed!
@@ -64,10 +65,10 @@ if %errorlevel% neq 0 (
 REM Link the DLL
 echo Linking pg_fasttransfer.dll...
 link /DLL /OUT:pg_fasttransfer.dll /nologo ^
-     /LIBPATH:"%PG_LIB%" ^
-     pg_fasttransfer.obj ^
-     postgres.lib ^
-     ws2_32.lib kernel32.lib user32.lib advapi32.lib
+    /LIBPATH:"%PG_LIB%" ^
+    pg_fasttransfer.obj ^
+    postgres.lib ^
+    ws2_32.lib kernel32.lib user32.lib advapi32.lib
 
 if %errorlevel% neq 0 (
     echo ERROR: Linking failed!
@@ -83,7 +84,7 @@ copy pg_fasttransfer--1.0.sql "%PG_SHARE%\extension\" >nul
 
 echo.
 echo ============================================
-echo  Build completed successfully!
+echo   Build completed successfully!
 echo ============================================
 echo.
 echo After restarting PostgreSQL, you can test with:

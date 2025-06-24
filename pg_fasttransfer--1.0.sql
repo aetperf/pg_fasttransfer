@@ -1,5 +1,9 @@
+-- Extension for encrypting and decrypting
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+
 -- Safe version of pg_fasttransfer function with full parameter support
-CREATE OR REPLACE FUNCTION pg_fasttransfer(
+CREATE OR REPLACE FUNCTION xp_RunFastTransfer_secure(
     sourceconnectiontype text DEFAULT NULL,
     sourceconnectstring text DEFAULT NULL,
     sourcedsn text DEFAULT NULL,
@@ -42,5 +46,10 @@ RETURNS TABLE (
     total_columns integer,
     transfer_time_ms bigint,
     total_time_ms bigint    
-) AS 'pg_fasttransfer'
+) AS 'pg_fasttransfer','xp_RunFastTransfer_secure'
 LANGUAGE C;
+
+CREATE OR REPLACE FUNCTION pg_fasttransfer_encrypt(password text)
+RETURNS text
+AS 'pg_fasttransfer', 'pg_fasttransfer_encrypt'
+LANGUAGE C STRICT;
