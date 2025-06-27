@@ -45,8 +45,6 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 * [Notes](#notes)
 
-Voici ton README mis à jour avec l’insertion de la section **FastTransfer Tool Requirement** juste après `## Prerequisites`, comme demandé :
-
 ---
 
 ## FastTransfer Tool Requirement
