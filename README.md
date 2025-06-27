@@ -45,7 +45,6 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 * [Notes](#notes)
 
----
 
 ## FastTransfer Tool Requirement
 
