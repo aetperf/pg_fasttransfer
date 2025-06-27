@@ -7,6 +7,8 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 ## Table of Contents
 
+* [FastTransfer Tool Requirement](#fasttransfer-tool-requirement)
+
 * [Prerequisites](#prerequisites)
 
   * [Linux](#linux)
@@ -43,17 +45,81 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 * [Notes](#notes)
 
+Voici ton README mis à jour avec l’insertion de la section **FastTransfer Tool Requirement** juste après `## Prerequisites`, comme demandé :
+
+---
+
+## FastTransfer Tool Requirement
+
+This extension requires the **FastTransfer** tool to be installed separately.
+
+**Download FastTransfer and get a free trial license here:**
+[https://www.arpe.io/get-your-fasttransfer-trial](https://www.arpe.io/get-your-fasttransfer-trial)
+
+Once downloaded, extract the archive and provide the folder path using the `fasttransfer_path` parameter when calling the `xp_RunFastTransfer_secure` SQL function.
+
+---
+
+### Available Versions
+
+#### Linux
+
+There are **two versions** available depending on your system architecture:
+
+* **x64 (amd64)**
+* **ARM64 (aarch64)**
+
+#### Windows
+
+Only one version is available for **Windows x64** systems.
+
+---
+
+### Example Directory Structure
+
+After extraction, the directory should contain:
+
+```
+FastTransfer/
+├── FastTransfer           # or FastTransfer.exe on Windows
+├── FastTransfer.lic
+└── ... (other files)
+```
+
+---
+
+### Example `fasttransfer_path` Values
+
+#### Linux Example
+
+```sql
+fasttransfer_path := '/opt/FastTransfer_linux-x64'
+```
+
+#### Windows Example
+
+```sql
+fasttransfer_path := 'C:\tools\FastTransfer_windows-x64'
+```
+
+> You do **not** need to include the executable name itself — just the directory containing it.
+
+---
+
 ## Prerequisites
 
 * PostgreSQL installed with development headers
-
 * Administrator privileges (sudo on Linux, appropriate rights on Windows)
+
+---
 
 ### Linux
 
 * `gcc` or `clang` (C compiler)
 
 * `make`
+
+---
 
 ### Windows
 
@@ -112,6 +178,8 @@ make clean && make && sudo make install
 sudo systemctl start postgresql
 ```
 
+---
+
 ### Windows
 
 1. Open **x64 Native Tools Command Prompt for VS 2022** (or equivalent).
@@ -133,6 +201,8 @@ This script will:
 * Copy the extension files to the appropriate PostgreSQL directories
 
 4. Restart the PostgreSQL service.
+
+---
 
 ## SQL Setup
 
