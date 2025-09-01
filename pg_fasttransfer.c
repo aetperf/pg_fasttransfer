@@ -198,6 +198,9 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     // Initialiser le StringInfo pour la commande
     command = makeStringInfo();
     appendStringInfo(command, "%s", binary_path);
+
+    ereport(LOG, (errmsg(command)));
+
     
     for (i = 0; i < 33; i++) {
 
@@ -254,6 +257,9 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     
     appendStringInfo(command, " 2>&1");
+
+    ereport(LOG, (errmsg(command)));
+
     
     // Exécuter la commande
     fp = popen(command->data, "r");
