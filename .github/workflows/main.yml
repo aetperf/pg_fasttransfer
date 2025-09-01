@@ -42,20 +42,29 @@ jobs:
       - name: Prepare release package
         shell: pwsh
         run: |
-          # Crée un dossier temporaire pour la release
           $releaseDir = Join-Path $env:GITHUB_WORKSPACE "release"
           if (Test-Path $releaseDir) { Remove-Item $releaseDir -Recurse -Force }
           New-Item -ItemType Directory -Path $releaseDir
 
-          # Copie les fichiers nécessaires
-          Copy-Item "pg_fasttransfer.dll" $releaseDir
-          Copy-Item "pg_fasttransfer.control" $releaseDir
-          Copy-Item "pg_fasttransfer--1.0.sql" $releaseDir
+          # Vérifie que les fichiers existent
+          $dllFile = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer.dll"
+          $controlFile = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer.control"
+          $sqlFile = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer--1.0.sql"
 
-          # Crée un zip avec ces fichiers
+          Write-Host "DLL exists:" (Test-Path $dllFile)
+          Write-Host "Control exists:" (Test-Path $controlFile)
+          Write-Host "SQL exists:" (Test-Path $sqlFile)
+
+          # Copie uniquement si les fichiers existent
+          if (Test-Path $dllFile) { Copy-Item $dllFile $releaseDir }
+          if (Test-Path $controlFile) { Copy-Item $controlFile $releaseDir }
+          if (Test-Path $sqlFile) { Copy-Item $sqlFile $releaseDir }
+
+          # Crée le zip avec uniquement ces fichiers
           $zipPath = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer-windows.zip"
           if (Test-Path $zipPath) { Remove-Item $zipPath }
           Compress-Archive -Path "$releaseDir\*" -DestinationPath $zipPath
+
 
       - name: Create GitHub release
         id: create_release
