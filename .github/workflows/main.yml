@@ -1,9 +1,7 @@
 name: Build Windows DLL
 
 on:
-  push:
-    tags:
-      - "v*"    # déclenche le build sur un tag vX.Y.Z
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -18,54 +16,46 @@ jobs:
       - name: Setup MSVC Build Tools
         uses: ilammy/msvc-dev-cmd@v1
 
-      # 3. Installer PostgreSQL via Chocolatey
-      - name: Install PostgreSQL
-        run: choco install postgresql15 --no-progress --yes
+      # 3. Télécharger PostgreSQL binaries
+      - name: Download PostgreSQL binaries
+        run: |
+          curl -L -o pgsql.zip https://get.enterprisedb.com/postgresql/postgresql-15.4-1-windows-x64-binaries.zip
+          mkdir pgsql
+          tar -xf pgsql.zip -C pgsql --strip-components=1
 
-      # 4. Ajouter PostgreSQL au PATH
-      - name: Add PostgreSQL to PATH
-        run: echo "C:\Program Files\PostgreSQL\15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      # 4. Ajouter pgsql/bin au PATH
+      - name: Add pgsql/bin to PATH
+        run: echo "${{ github.workspace }}\pgsql\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      # 5. Vérifier que pg_config est dispo
+      # 5. Vérifier pg_config
       - name: Check pg_config
-        run: where pg_config
+        run: pg_config --version
 
-      # 6. Compiler l’extension
-      - name: Compile Extension
+      # 6. Compiler la DLL
+      - name: Compile pg_fasttransfer
         shell: pwsh
         run: |
           $ROOT = "${{ github.workspace }}"           # racine du repo pour netinet/in.h
-          $PG_INCLUDE_SERVER = & pg_config --includedir-server
-          $PG_INCLUDE        = & pg_config --includedir
-          $PG_LIB            = & pg_config --libdir
+          $I = "$ROOT\pgsql\include"
+          $S = "$ROOT\pgsql\include\server"
+          $L = "$ROOT\pgsql\lib"
 
-          echo "Compiling pg_fasttransfer.c..."
-          cl /c /MD /O2 /W1 /nologo `
-             /I"$ROOT" `                          # <- inclut la racine du repo pour netinet/in.h
-             /I"$PG_INCLUDE_SERVER" `
-             /I"$PG_INCLUDE" `
-             /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 `
-             /D_CRT_SECURE_NO_WARNINGS `
-             /wd4005 /wd4996 `
-             pg_fasttransfer.c
+          cl /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
+             /I"$ROOT" `                             # <- inclut la racine pour netinet/in.h
+             /I"$I" `
+             /I"$S" `
+             /link /LIBPATH:"$L" postgres.lib ws2_32.lib
 
-          echo "Linking DLL..."
-          link /DLL /OUT:pg_fasttransfer.dll /nologo `
-             /LIBPATH:"$PG_LIB" `
-             pg_fasttransfer.obj `
-             postgres.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib
-
-      # 7. Préparer le package release minimal
-      - name: Prepare Release Package
+      # 7. Préparer le package minimal
+      - name: Prepare release package
         run: |
           mkdir release
           copy pg_fasttransfer.dll release\
           copy pg_fasttransfer.control release\
           copy pg_fasttransfer--1.0.sql release\
-          echo "You can add install.ps1 later" > release\README.txt
 
-      # 8. Uploader artefacts
-      - name: Upload build artifacts
+      # 8. Uploader l’artefact minimal
+      - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: pg_fasttransfer-windows
