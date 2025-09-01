@@ -192,7 +192,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     appendStringInfo(command, "\"%s\"", binary_path);
     
     for (i = 0; i < 33; i++) {
-        ereport(LOG, (errmsg(arg_names[i])));
 
         if (PG_ARGISNULL(i)) continue;
         
@@ -247,6 +246,9 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     
     appendStringInfo(command, " 2>&1");
+
+    ereport(LOG, (errmsg(command)));
+
     
     // Exécuter la commande
     fp = popen(command->data, "r");
@@ -265,6 +267,8 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         pfree(result_output);
         
         status = pclose(fp);
+
+        ereport(LOG, (errmsg("commande executé")));
         
         // Analyser les résultats
         if (result_buffer[0] != '\0') {
