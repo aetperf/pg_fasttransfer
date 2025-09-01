@@ -190,6 +190,8 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     appendStringInfo(command, "\"%s\"", binary_path);
     
     for (i = 0; i < 33; i++) {
+        ereport(LOG, (errmsg(arg_names[i])));
+
         if (PG_ARGISNULL(i)) continue;
         
         is_bool = false;
