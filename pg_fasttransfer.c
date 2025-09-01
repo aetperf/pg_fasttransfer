@@ -72,14 +72,11 @@ char *decrypt_password(text *cipher_text, const char *key) {
     text *txt;
     
     char *cipher_string = text_to_cstring(cipher_text);
-    ereport(LOG, (errmsg("pg_fasttransfer: Attempting to decrypt password. Input cipher: %s", cipher_string)));
 
     if (SPI_connect() != SPI_OK_CONNECT) {
         ereport(ERROR, (errmsg("Failed to connect to SPI for decryption")));
     }
     
-    ereport(LOG, (errmsg("pg_fasttransfer: Connected to SPI. Executing decryption query...")));
-
     ret = SPI_execute_with_args(sql, 2, argtypes, values, NULL, true, 1);
 
     if (ret != SPI_OK_SELECT || SPI_processed != 1) {
@@ -87,8 +84,6 @@ char *decrypt_password(text *cipher_text, const char *key) {
         ereport(ERROR, (errmsg("Decryption failed via pgp_sym_decrypt. Check encrypted data or key.")));
     }
     
-    ereport(LOG, (errmsg("pg_fasttransfer: Decryption query executed successfully.")));
-
     result = SPI_getbinval(SPI_tuptable->vals[0],
                            SPI_tuptable->tupdesc,
                            1,
@@ -97,7 +92,6 @@ char *decrypt_password(text *cipher_text, const char *key) {
     if (!isnull) {
         txt = DatumGetTextPP(result);
         decrypted = text_to_cstring(txt);
-        ereport(LOG, (errmsg("pg_fasttransfer: Decryption successful. Decrypted password: %s", decrypted)));
     } else {
         ereport(LOG, (errmsg("pg_fasttransfer: Decryption returned NULL.")));
     }
@@ -198,6 +192,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     appendStringInfo(command, "\"%s\"", binary_path);
     
     for (i = 0; i < 33; i++) {
+        ereport(LOG, (errmsg(arg_names[i])));
 
         if (PG_ARGISNULL(i)) continue;
         
