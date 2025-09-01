@@ -174,17 +174,17 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     // Construire le chemin binaire
     if (fcinfo->nargs > 33 && !PG_ARGISNULL(33)) {
         pg_path = text_to_cstring(PG_GETARG_TEXT_PP(33));
-#ifdef _WIN32
-        snprintf(binary_path, sizeof(binary_path), "%s\\%s", pg_path, BINARY_NAME);
-#else
-        snprintf(binary_path, sizeof(binary_path), "%s/%s", pg_path, BINARY_NAME);
-#endif
+        #ifdef _WIN32
+                snprintf(binary_path, sizeof(binary_path), "%s\\%s", pg_path, BINARY_NAME);
+        #else
+                snprintf(binary_path, sizeof(binary_path), "%s/%s", pg_path, BINARY_NAME);
+        #endif
     } else {
-#ifdef _WIN32
-        snprintf(binary_path, sizeof(binary_path), ".\\%s", BINARY_NAME);
-#else
-        snprintf(binary_path, sizeof(binary_path), "./%s", BINARY_NAME);
-#endif
+        #ifdef _WIN32
+                snprintf(binary_path, sizeof(binary_path), ".\\%s", BINARY_NAME);
+        #else
+                snprintf(binary_path, sizeof(binary_path), "./%s", BINARY_NAME);
+        #endif
     }
 
     for (i = 0; binary_path[i] != '\0'; i++) {
@@ -261,16 +261,18 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     // Exécuter la commande
     fp = popen(command->data, "r");
-    ereport(LOG, (errmsg("commande 1")));
     if (!fp) {
         snprintf(result_buffer, sizeof(result_buffer), "Error: unable to execute FastTransfer.\n");
         exit_code = -1;
-        ereport(LOG, (errmsg("commande 2")));
     } else {
         ereport(LOG, (errmsg("commande 10")));
 
         result_output = makeStringInfo();
+        ereport(LOG, (errmsg("result_output")));
+
         while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+            ereport(LOG, (errmsg(buffer)));
+
             appendStringInfoString(result_output, buffer);
         }
         ereport(LOG, (errmsg("commande 3")));
