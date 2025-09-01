@@ -61,7 +61,7 @@ char *decrypt_password(text *cipher_text, const char *key) {
     const char *sql = "SELECT pgp_sym_decrypt(decode($1, 'base64'), $2)";
     Oid argtypes[2] = { TEXTOID, TEXTOID };
     Datum values[2] = {
-        CStringGetTextDatum(cipher_text),
+        PointerGetDatum(cipher_text),
         CStringGetTextDatum(key)
     };
 
@@ -70,13 +70,15 @@ char *decrypt_password(text *cipher_text, const char *key) {
     bool isnull;
     Datum result;
     text *txt;
-
-    ereport(LOG, (errmsg("pg_fasttransfer: cipher_text value: %s", text_to_cstring(cipher_text))));
-
+    
+    char *cipher_string = text_to_cstring(cipher_text);
+    ereport(LOG, (errmsg("pg_fasttransfer: Attempting to decrypt password. Input cipher: %s", cipher_string)));
 
     if (SPI_connect() != SPI_OK_CONNECT) {
         ereport(ERROR, (errmsg("Failed to connect to SPI for decryption")));
     }
+    
+    ereport(LOG, (errmsg("pg_fasttransfer: Connected to SPI. Executing decryption query...")));
 
     ret = SPI_execute_with_args(sql, 2, argtypes, values, NULL, true, 1);
 
@@ -84,6 +86,8 @@ char *decrypt_password(text *cipher_text, const char *key) {
         SPI_finish();
         ereport(ERROR, (errmsg("Decryption failed via pgp_sym_decrypt. Check encrypted data or key.")));
     }
+    
+    ereport(LOG, (errmsg("pg_fasttransfer: Decryption query executed successfully.")));
 
     result = SPI_getbinval(SPI_tuptable->vals[0],
                            SPI_tuptable->tupdesc,
@@ -93,10 +97,10 @@ char *decrypt_password(text *cipher_text, const char *key) {
     if (!isnull) {
         txt = DatumGetTextPP(result);
         decrypted = text_to_cstring(txt);
+        ereport(LOG, (errmsg("pg_fasttransfer: Decryption successful. Decrypted password: %s", decrypted)));
+    } else {
+        ereport(LOG, (errmsg("pg_fasttransfer: Decryption returned NULL.")));
     }
-
-    ereport(LOG, (errmsg(decrypted)));
-
 
     SPI_finish();
 
