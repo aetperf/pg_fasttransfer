@@ -251,18 +251,23 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     // Exécuter la commande
     fp = popen(command->data, "r");
+    ereport(LOG, (errmsg("commande 1")));
     if (!fp) {
         snprintf(result_buffer, sizeof(result_buffer), "Error: unable to execute FastTransfer.\n");
         exit_code = -1;
+        ereport(LOG, (errmsg("commande 2")));
     } else {
         result_output = makeStringInfo();
         while (fgets(buffer, sizeof(buffer), fp) != NULL) {
             appendStringInfoString(result_output, buffer);
         }
+        ereport(LOG, (errmsg("commande 3")));
         
         // Copier le contenu du StringInfo dans le tampon statique pour l'analyse
         strlcpy(result_buffer, result_output->data, sizeof(result_buffer));
+        ereport(LOG, (errmsg("commande 4")));
         pfree(result_output->data); // Libère la mémoire allouée par StringInfo
+        ereport(LOG, (errmsg("commande 5")));
         pfree(result_output);
         
         status = pclose(fp);
