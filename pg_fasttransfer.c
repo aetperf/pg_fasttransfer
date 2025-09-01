@@ -71,8 +71,8 @@ char *decrypt_password(text *cipher_text, const char *key) {
     Datum result;
     text *txt;
 
-    ereport(LOG, (errmsg(values[0])));
-    ereport(LOG, (errmsg(values[1])));
+    ereport(LOG, (errmsg(cipher_text)));
+    ereport(LOG, (errmsg(key)));
 
 
 
@@ -196,7 +196,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     appendStringInfo(command, "\"%s\"", binary_path);
     
     for (i = 0; i < 33; i++) {
-        ereport(LOG, (errmsg(arg_names[i])));
 
         if (PG_ARGISNULL(i)) continue;
         
