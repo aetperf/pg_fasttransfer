@@ -38,15 +38,19 @@ jobs:
         shell: pwsh
         run: |
           $ROOT = "${{ github.workspace }}"           # racine du repo pour netinet/in.h
-          $I = "$ROOT\pgsql\include"
-          $S = "$ROOT\pgsql\include\server"
-          $L = "$ROOT\pgsql\lib"
+          $I = Join-Path $ROOT "pgsql\include"
+          $S = Join-Path $ROOT "pgsql\include\server"
+          $L = Join-Path $ROOT "pgsql\lib"
+      
+          Write-Host "Include dirs: $ROOT, $I, $S"
+          Write-Host "Lib dir: $L"
+      
+          & cl.exe /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
+              /I"$ROOT" `
+              /I"$I" `
+              /I"$S" `
+              /link /LIBPATH:"$L" postgres.lib ws2_32.lib
 
-          cl /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
-             /I"$ROOT" `                             # <- inclut la racine pour netinet/in.h
-             /I"$I" `
-             /I"$S" `
-             /link /LIBPATH:"$L" postgres.lib ws2_32.lib
 
       # 7. Préparer le package minimal
       - name: Prepare release package
