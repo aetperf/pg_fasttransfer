@@ -61,7 +61,7 @@ char *decrypt_password(text *cipher_text, const char *key) {
     const char *sql = "SELECT pgp_sym_decrypt(decode($1, 'base64'), $2)";
     Oid argtypes[2] = { TEXTOID, TEXTOID };
     Datum values[2] = {
-        PointerGetDatum(cipher_text),
+        CStringGetTextDatum(cipher_text),
         CStringGetTextDatum(key)
     };
 
