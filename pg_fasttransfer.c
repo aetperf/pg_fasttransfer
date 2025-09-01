@@ -71,9 +71,7 @@ char *decrypt_password(text *cipher_text, const char *key) {
     Datum result;
     text *txt;
 
-    ereport(LOG, (errmsg(cipher_text)));
-    ereport(LOG, (errmsg(key)));
-
+    ereport(LOG, (errmsg("pg_fasttransfer: cipher_text value: %s", text_to_cstring(cipher_text))));
 
 
     if (SPI_connect() != SPI_OK_CONNECT) {
