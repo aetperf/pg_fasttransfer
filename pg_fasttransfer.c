@@ -247,8 +247,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     appendStringInfo(command, " 2>&1");
 
-    ereport(LOG, (errmsg(command)));
-
+    ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
     
     // Exécuter la commande
     fp = popen(command->data, "r");
