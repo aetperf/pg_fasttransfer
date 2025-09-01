@@ -54,7 +54,8 @@ jobs:
           # Crée le zip à partir du contenu du dossier release
           $zipPath = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer-windows.zip"
           if (Test-Path $zipPath) { Remove-Item $zipPath }
-          Compress-Archive -LiteralPath "$releaseDir\*" -DestinationPath $zipPath -Force
+          Compress-Archive -Path "$releaseDir\*" -DestinationPath $zipPath -Force
+
 
 
       - name: Create GitHub release
