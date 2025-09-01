@@ -8,49 +8,54 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-
+  
+    strategy:
+      matrix:
+        pg_version: ['15', '16', '17']
+      
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup MSVC Build Tools
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Download PostgreSQL binaries
-        run: |
-          curl -L -o pgsql.zip https://get.enterprisedb.com/postgresql/postgresql-15.4-1-windows-x64-binaries.zip
-          mkdir pgsql
-          tar -xf pgsql.zip -C pgsql --strip-components=1
-
-      - name: Add pgsql/bin to PATH
-        run: echo "${{ github.workspace }}\pgsql\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Compile pg_fasttransfer
-        shell: pwsh
-        run: |
-          $ROOT = "${{ github.workspace }}"
-          $I = Join-Path $ROOT "pgsql\include"
-          $S = Join-Path $ROOT "pgsql\include\server"
-          $L = Join-Path $ROOT "pgsql\lib"
-
-          & cl.exe /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
-            /I"$ROOT" `
-            /I"$I" `
-            /I"$S" `
-            /link /LIBPATH:"$L" postgres.lib ws2_32.lib
-
-      - name: Create Release Archive
-        shell: pwsh
-        run: |
-          Compress-Archive -Path pg_fasttransfer.dll, *.sql, *.control -DestinationPath pg_fasttransfer.zip
-
-      - name: Create or Update GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: pg_fasttransfer.zip
-          prerelease: false
-          draft: false
-          overwrite: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checkout repository
+      uses: actions/checkout@v4
+  
+    - name: Setup MSVC Build Tools
+      uses: ilammy/msvc-dev-cmd@v1
+  
+    - name: Download PostgreSQL ${{ matrix.pg_version }} binaries
+      run: |
+        curl -L -o pgsql.zip https://get.enterprisedb.com/postgresql/postgresql-${{ matrix.pg_version }}.4-1-windows-x64-binaries.zip
+        mkdir pgsql
+        tar -xf pgsql.zip -C pgsql --strip-components=1
+  
+    - name: Add pgsql/bin to PATH
+      run: echo "${{ github.workspace }}\pgsql\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+  
+    - name: Compile pg_fasttransfer for PG ${{ matrix.pg_version }}
+      shell: pwsh
+      run: |
+        $ROOT = "${{ github.workspace }}"
+        $I = Join-Path $ROOT "pgsql\include"
+        $S = Join-Path $ROOT "pgsql\include\server"
+        $L = Join-Path $ROOT "pgsql\lib"
+  
+        & cl.exe /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
+          /I"$ROOT" `
+          /I"$I" `
+          /I"$S" `
+          /I"$L" `
+          /link /LIBPATH:"$L" postgres.lib ws2_32.lib
+  
+    - name: Create Release Archive for PG ${{ matrix.pg_version }}
+      shell: pwsh
+      run: |
+        Compress-Archive -Path pg_fasttransfer.dll, *.sql, *.control -DestinationPath pg_fasttransfer-windows-pg${{ matrix.pg_version }}.zip
+  
+    - name: Create or Update GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: pg_fasttransfer-windows-pg${{ matrix.pg_version }}.zip
+        prerelease: false
+        draft: false
+        overwrite: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
