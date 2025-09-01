@@ -186,20 +186,19 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         snprintf(binary_path, sizeof(binary_path), "./%s", BINARY_NAME);
 #endif
     }
-    
-    // Vérifier la présence d'espaces dans le chemin binaire
+
     for (i = 0; binary_path[i] != '\0'; i++) {
         if (isspace((unsigned char)binary_path[i])) {
             ereport(ERROR, (errmsg("The path of the executable must not contain spaces.")));
             break;
         }
     }
-
+    
     // Initialiser le StringInfo pour la commande
     command = makeStringInfo();
     appendStringInfo(command, "%s", binary_path);
 
-    ereport(LOG, (errmsg(command)));
+    ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
 
     
     for (i = 0; i < 33; i++) {
@@ -258,15 +257,18 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     appendStringInfo(command, " 2>&1");
 
-    ereport(LOG, (errmsg(command)));
-
+    ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
     
     // Exécuter la commande
     fp = popen(command->data, "r");
+    ereport(LOG, (errmsg("commande 1")));
     if (!fp) {
         snprintf(result_buffer, sizeof(result_buffer), "Error: unable to execute FastTransfer.\n");
         exit_code = -1;
+        ereport(LOG, (errmsg("commande 2")));
     } else {
+        ereport(LOG, (errmsg("commande 10")));
+
         result_output = makeStringInfo();
         while (fgets(buffer, sizeof(buffer), fp) != NULL) {
             appendStringInfoString(result_output, buffer);
