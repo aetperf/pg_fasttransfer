@@ -55,10 +55,14 @@ jobs:
           if (Test-Path $mainZip) { Remove-Item $mainZip }
           Compress-Archive -Path "$releaseDir\*" -DestinationPath $mainZip -Force
 
-          # ZIP avec seulement les 3 fichiers
+          # ZIP avec seulement les 3 fichiers spécifiques
           $threeFilesZip = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer-threefiles.zip"
           if (Test-Path $threeFilesZip) { Remove-Item $threeFilesZip }
-          Compress-Archive -Path "$releaseDir\*" -DestinationPath $threeFilesZip -Force
+          Compress-Archive -Path `
+            "$releaseDir\pg_fasttransfer.dll", `
+            "$releaseDir\pg_fasttransfer.control", `
+            "$releaseDir\pg_fasttransfer--1.0.sql" `
+            -DestinationPath $threeFilesZip -Force
 
       - name: Create GitHub release
         id: create_release
@@ -79,4 +83,10 @@ jobs:
           asset_name: pg_fasttransfer-windows.zip
           asset_content_type: application/zip
 
-      
+      - name: Upload three-files ZIP
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: pg_fasttransfer-threefiles.zip
+          asset_name: pg_fasttransfer-threefiles.zip
+          asset_content_type: application/zip
