@@ -1,0 +1,68 @@
+name: Build Windows DLL
+
+on:
+  push:
+    tags:
+      - "v*"   
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Configure MSVC (cl.exe + link.exe)
+      - name: Setup MSVC Build Tools
+        uses: ilammy/msvc-dev-cmd@v1
+
+      # Installer PostgreSQL (pour pg_config, headers, libs)
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: 15
+
+      # Vérifier que pg_config est dispo
+      - name: Check pg_config
+        run: where pg_config
+
+      # Compiler l’extension (remplace ton .bat)
+      - name: Compile Extension
+        shell: pwsh
+        run: |
+          $PG_INCLUDE_SERVER = & pg_config --includedir-server
+          $PG_INCLUDE        = & pg_config --includedir
+          $PG_LIB            = & pg_config --libdir
+
+          echo "Compiling pg_fasttransfer.c..."
+          cl /c /MD /O2 /W1 /nologo `
+             /I. `
+             /I"$PG_INCLUDE_SERVER" `
+             /I"$PG_INCLUDE" `
+             /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 `
+             /D_CRT_SECURE_NO_WARNINGS `
+             /wd4005 /wd4996 `
+             pg_fasttransfer.c
+
+          echo "Linking DLL..."
+          link /DLL /OUT:pg_fasttransfer.dll /nologo `
+             /LIBPATH:"$PG_LIB" `
+             pg_fasttransfer.obj `
+             postgres.lib ws2_32.lib kernel32.lib user32.lib advapi32.lib
+
+      # Préparer le package release
+      - name: Prepare Release Package
+        run: |
+          mkdir release
+          copy pg_fasttransfer.dll release\
+          copy pg_fasttransfer.control release\
+          copy pg_fasttransfer--1.0.sql release\
+          echo "You can add install.ps1 later" > release\README.txt
+
+      # Uploader artefacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg_fasttransfer-windows
+          path: release/*
