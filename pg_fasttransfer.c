@@ -71,7 +71,10 @@ char *decrypt_password(text *cipher_text, const char *key) {
     Datum result;
     text *txt;
 
-    ereport(LOG, (errmsg("pg_fasttransfer: Attempting to decrypt password.")));
+    ereport(LOG, (errmsg(values[0])));
+    ereport(LOG, (errmsg(values[1])));
+
+
 
     if (SPI_connect() != SPI_OK_CONNECT) {
         ereport(ERROR, (errmsg("Failed to connect to SPI for decryption")));
@@ -93,6 +96,9 @@ char *decrypt_password(text *cipher_text, const char *key) {
         txt = DatumGetTextPP(result);
         decrypted = text_to_cstring(txt);
     }
+
+    ereport(LOG, (errmsg(decrypted)));
+
 
     SPI_finish();
 
