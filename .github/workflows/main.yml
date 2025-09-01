@@ -39,54 +39,26 @@ jobs:
             /I"$S" `
             /link /LIBPATH:"$L" postgres.lib ws2_32.lib
 
-      - name: Prepare release package
+      - name: Create Release Archive
         shell: pwsh
         run: |
-          $releaseDir = Join-Path $env:GITHUB_WORKSPACE "release"
-          if (-Not (Test-Path $releaseDir)) { New-Item -ItemType Directory -Path $releaseDir }
-
-          # Copier les fichiers
-          Copy-Item "$env:GITHUB_WORKSPACE\pg_fasttransfer.dll" $releaseDir
-          Copy-Item "$env:GITHUB_WORKSPACE\pg_fasttransfer.control" $releaseDir
-          Copy-Item "$env:GITHUB_WORKSPACE\pg_fasttransfer--1.0.sql" $releaseDir
-
-          # ZIP principal (tous les fichiers du release)
-          $mainZip = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer-windows.zip"
-          if (Test-Path $mainZip) { Remove-Item $mainZip }
-          Compress-Archive -Path "$releaseDir\*" -DestinationPath $mainZip -Force
-
-          # ZIP avec seulement les 3 fichiers spécifiques
-          $threeFilesZip = Join-Path $env:GITHUB_WORKSPACE "pg_fasttransfer-threefiles.zip"
-          if (Test-Path $threeFilesZip) { Remove-Item $threeFilesZip }
-          Compress-Archive -Path `
-            "$releaseDir\pg_fasttransfer.dll", `
-            "$releaseDir\pg_fasttransfer.control", `
-            "$releaseDir\pg_fasttransfer--1.0.sql" `
-            -DestinationPath $threeFilesZip -Force
-
-      - name: Create GitHub release
+          Compress-Archive -Path pg_fasttransfer.dll, *.sql, *.control -DestinationPath pg_fasttransfer.zip
+    
+      - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload main ZIP
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+    
+      - name: Upload Release Asset
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: pg_fasttransfer-windows.zip
-          asset_name: pg_fasttransfer-windows.zip
-          asset_content_type: application/zip
-
-      - name: Upload three-files ZIP
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: pg_fasttransfer-threefiles.zip
-          asset_name: pg_fasttransfer-threefiles.zip
-          asset_content_type: application/zip
