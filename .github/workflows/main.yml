@@ -10,59 +10,58 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1. Récupérer le code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configurer MSVC pour compiler
       - name: Setup MSVC Build Tools
         uses: ilammy/msvc-dev-cmd@v1
 
-      # 3. Télécharger PostgreSQL binaries
       - name: Download PostgreSQL binaries
         run: |
           curl -L -o pgsql.zip https://get.enterprisedb.com/postgresql/postgresql-15.4-1-windows-x64-binaries.zip
           mkdir pgsql
           tar -xf pgsql.zip -C pgsql --strip-components=1
 
-      # 4. Ajouter pgsql/bin au PATH
       - name: Add pgsql/bin to PATH
         run: echo "${{ github.workspace }}\pgsql\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      # 5. Vérifier pg_config
-      - name: Check pg_config
-        run: pg_config --version
-
-      # 6. Compiler la DLL
       - name: Compile pg_fasttransfer
         shell: pwsh
         run: |
-          $ROOT = "${{ github.workspace }}"           # racine du repo pour netinet/in.h
+          $ROOT = "${{ github.workspace }}"
           $I = Join-Path $ROOT "pgsql\include"
           $S = Join-Path $ROOT "pgsql\include\server"
           $L = Join-Path $ROOT "pgsql\lib"
-      
-          Write-Host "Include dirs: $ROOT, $I, $S"
-          Write-Host "Lib dir: $L"
-      
+
           & cl.exe /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
-              /I"$ROOT" `
-              /I"$I" `
-              /I"$S" `
-              /link /LIBPATH:"$L" postgres.lib ws2_32.lib
+            /I"$ROOT" `
+            /I"$I" `
+            /I"$S" `
+            /link /LIBPATH:"$L" postgres.lib ws2_32.lib
 
-
-      # 7. Préparer le package minimal
       - name: Prepare release package
         run: |
           mkdir release
           copy pg_fasttransfer.dll release\
           copy pg_fasttransfer.control release\
           copy pg_fasttransfer--1.0.sql release\
+          # créer un zip avec uniquement les fichiers nécessaires
+          Compress-Archive -Path release\* -DestinationPath pg_fasttransfer-windows.zip
 
-      # 8. Uploader l’artefact minimal
-      - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub release
+        uses: actions/create-release@v1
         with:
-          name: pg_fasttransfer-windows
-          path: release/*
+          tag_name: v1.0.0
+          release_name: Windows DLL v1.0.0
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: pg_fasttransfer-windows.zip
+          asset_name: pg_fasttransfer-windows.zip
+          asset_content_type: application/zip
