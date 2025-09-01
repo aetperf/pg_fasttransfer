@@ -257,6 +257,8 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         exit_code = -1;
         ereport(LOG, (errmsg("commande 2")));
     } else {
+        ereport(LOG, (errmsg("commande 10")));
+
         result_output = makeStringInfo();
         while (fgets(buffer, sizeof(buffer), fp) != NULL) {
             appendStringInfoString(result_output, buffer);
