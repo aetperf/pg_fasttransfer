@@ -49,6 +49,7 @@ jobs:
           Compress-Archive -Path release\* -DestinationPath pg_fasttransfer-windows.zip
 
       - name: Create GitHub release
+        id: create_release         
         uses: actions/create-release@v1
         with:
           tag_name: v1.0.0
@@ -57,11 +58,12 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}  # <- récupère l’URL
           asset_path: pg_fasttransfer-windows.zip
           asset_name: pg_fasttransfer-windows.zip
           asset_content_type: application/zip
+
