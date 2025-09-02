@@ -168,8 +168,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
         ereport(ERROR, (errmsg("The function should return a record")));
     
-    // Initialiser le tampon de résultat statique
-    result_buffer[0] = '\0';
+    
     
     // Construire le chemin binaire
     if (fcinfo->nargs > 33 && !PG_ARGISNULL(33)) {
@@ -194,7 +193,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         }
     }
     
-    // Initialiser le StringInfo pour la commande
     appendStringInfo(command, "%s", binary_path);
 
     ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
@@ -270,12 +268,9 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 appendStringInfoString(result_output, buffer);
             }
             
-            // Copier le contenu du StringInfo dans le tampon statique pour l'analyse
-            //strlcpy(result_buffer, result_output->data, sizeof(result_buffer));
-            //pfree(result_output->data); // Libère la mémoire allouée par StringInfo
-            //pfree(result_output);
             
             status = pclose(fp);
+            fp = NULL;
 
             // Analyser le code de sortie
 #ifdef _WIN32
@@ -285,68 +280,101 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 exit_code = WEXITSTATUS(status);
             } else {
                 exit_code = -2;
-                strncat(result_buffer, "\nUnknown error of FastTransfer\n", sizeof(result_buffer) - strlen(result_buffer) - 1);
             }
 #endif
     
-            // Vérifier les erreurs de licence
-            if (strstr(result_buffer, "Licence file not found") != NULL) {
-                exit_code = -4; // Code d'erreur pour la licence
-                strlcpy(result_buffer, "Error: FastTransfer.exe could not find the license file. Please ensure 'FastTransfer.lic' is in the same directory as the executable.", sizeof(result_buffer));
-            }
+           
     
             // Journaliser le code de sortie pour le débogage
             ereport(LOG, (errmsg("pg_fasttransfer: Process exited with status code: %d", exit_code)));
             
-            // Analyser les résultats
-            if (result_buffer[0] != '\0') {
-                token = strstr(result_buffer, "Total rows : ");
-                if (token != NULL) {
-                    total_rows = strtol(token + strlen("Total rows : "), NULL, 10);
+            /* Parsing sûr de la sortie : on recherche des labels et on utilise strtol avec endptr */
+            char *out = result_output->data;
+            char *token = NULL;
+            if (out && out[0] != '\0') {
+                /* Total rows */
+                token = strstr(out, "Total rows : ");
+                if (token) {
+                    char *p = token + strlen("Total rows : ");
+                    char *endptr = NULL;
+                    long v = strtol(p, &endptr, 10);
+                    if (endptr != p) total_rows = v;
                 }
-                
-                token = strstr(result_buffer, "Total columns : ");
-                if (token != NULL) {
-                    total_columns = strtol(token + strlen("Total columns : "), NULL, 10);
+
+                /* Total columns */
+                token = strstr(out, "Total columns : ");
+                if (token) {
+                    char *p = token + strlen("Total columns : ");
+                    char *endptr = NULL;
+                    long v = strtol(p, &endptr, 10);
+                    if (endptr != p) total_columns = (int)v;
                 }
-                
-                token = strstr(result_buffer, "Transfert time : Elapsed");
-                if (token != NULL) {
-                    transfer_time = strtol(token + strlen("Transfert time : Elapsed="), NULL, 10);
+
+                /* Transfer time : essayer plusieurs variantes (orthographe) */
+                token = strstr(out, "Transfert time : Elapsed=");
+                if (!token) token = strstr(out, "Transfer time : Elapsed=");
+                if (token) {
+                    char *p = token;
+                    /* trouver le signe '=' dans la ligne */
+                    char *eq = strchr(p, '=');
+                    if (eq) {
+                        char *endptr = NULL;
+                        long v = strtol(eq + 1, &endptr, 10);
+                        if (endptr != (eq + 1)) transfer_time = v;
+                    }
                 }
-                
-                token = strstr(result_buffer, "Total time : Elapsed=");
-                if (token != NULL) {
-                    total_time = strtol(token + strlen("Total time : Elapsed="), NULL, 10);
+
+                /* Total time */
+                token = strstr(out, "Total time : Elapsed=");
+                if (token) {
+                    char *eq = strchr(token, '=');
+                    if (eq) {
+                        char *endptr = NULL;
+                        long v = strtol(eq + 1, &endptr, 10);
+                        if (endptr != (eq + 1)) total_time = v;
+                    }
                 }
             }
         }
     }
     PG_CATCH();
     {
-        // Une erreur s'est produite, probablement due à FastTransfer
-        // Journaliser le message d'erreur et définir le code de sortie sur -3
+       /* En cas d'exception PostgreSQL on journalise et on renvoie un message d'erreur simple */
+        ErrorData *errdata;
+        MemoryContext oldcxt = MemoryContextSwitchTo(ErrorContext);
+        errdata = CopyErrorData();
+        MemoryContextSwitchTo(oldcxt);
+        /* log l'erreur */
+        ereport(LOG, (errmsg("pg_fasttransfer: exception caught during execution: %s", errdata->message)));
+        FreeErrorData(errdata);
+
+        /* Sécuriser exit code et message */
         exit_code = -3;
-        ereport(LOG, (errmsg("pg_fasttransfer: An exception occurred during execution of FastTransfer. The process likely crashed.")));
-        ereport(LOG, (errmsg("pg_fasttransfer: Process exited with status code: %d", exit_code)));
-        strlcpy(result_buffer, "An internal error occurred during data transfer. Check PostgreSQL logs for details.\n", sizeof(result_buffer));
+        /* remplacer la sortie par un message d'erreur minimal */
+        resetStringInfo(result_output);
+        appendStringInfoString(result_output, "An internal error occurred during data transfer. Check PostgreSQL logs for details.\n");
+    
     }
     PG_END_TRY();
     
-    /* Libération des StringInfo (ne PAS pfree ->data séparément) */
-    if (command) pfree(command);
-    if (result_output) pfree(result_output);
+    
 
     // Retourner les résultats
     values[0] = Int32GetDatum(exit_code);
     //values[1] = CStringGetTextDatum(result_buffer);
     values[1] = CStringGetTextDatum(result_output->data); // direct
+
     values[2] = Int64GetDatum(total_rows);
     values[3] = Int32GetDatum(total_columns);
     values[4] = Int64GetDatum(transfer_time);
     values[5] = Int64GetDatum(total_time);
     
     tuple = heap_form_tuple(tupdesc, values, nulls);
+
+    // Libérer la mémoire allouée pour la commande
+    if (command) pfree(command);
+    if (result_output) pfree(result_output);
+
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
 
