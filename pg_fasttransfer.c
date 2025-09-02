@@ -371,10 +371,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     tuple = heap_form_tuple(tupdesc, values, nulls);
 
-    // Libérer la mémoire allouée pour la commande
-    if (command) pfree(command);
-    if (result_output) pfree(result_output);
-
+   
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
 
