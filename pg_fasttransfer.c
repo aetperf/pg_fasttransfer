@@ -255,8 +255,9 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         }
     }
     
-    //appendStringInfo(command, " 2>&1");
-
+    appendStringInfo(command, " 2>&1");
+    
+    // Log the full command before execution
     ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
     
     // Exécuter la commande avec gestion d'erreurs
@@ -264,8 +265,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     {
        fp = popen(command->data, "r");
         if (!fp) {
-            snprintf(result_buffer, sizeof(result_buffer), "Error: unable to execute FastTransfer.\n");
-            exit_code = -1;
+            ereport(FATAL, (errmsg("pg_fasttransfer: unable to execute FastTransfer. Check the binary path, permissions, and environment variables.")));
         } else {
             result_output = makeStringInfo();
             while (fgets(buffer, sizeof(buffer), fp) != NULL) {
@@ -290,6 +290,12 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 strncat(result_buffer, "\nUnknown error of FastTransfer\n", sizeof(result_buffer) - strlen(result_buffer) - 1);
             }
 #endif
+    
+            // Vérifier les erreurs de licence
+            if (strstr(result_buffer, "Licence file not found") != NULL) {
+                exit_code = -4; // Code d'erreur pour la licence
+                strlcpy(result_buffer, "Error: FastTransfer.exe could not find the license file. Please ensure 'FastTransfer.lic' is in the same directory as the executable.", sizeof(result_buffer));
+            }
     
             // Journaliser le code de sortie pour le débogage
             ereport(LOG, (errmsg("pg_fasttransfer: Process exited with status code: %d", exit_code)));
