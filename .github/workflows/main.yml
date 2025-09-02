@@ -60,40 +60,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-  build-linux:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        pg_version: ['15', '16', '17']
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Install PostgreSQL ${{ matrix.pg_version }} dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql-${{ matrix.pg_version }}-server-dev
-
-    - name: Compile pg_fasttransfer for PG ${{ matrix.pg_version }}
-      run: |
-        gcc -fPIC -shared -o pg_fasttransfer.so pg_fasttransfer.c \
-        -I/usr/include/postgresql/server \
-        -I/usr/include/postgresql \
-        -lpostgres
-        
-    - name: Create Release Archive for PG ${{ matrix.pg_version }}
-      run: |
-        zip pg_fasttransfer-linux-pg${{ matrix.pg_version }}.zip pg_fasttransfer.so *.sql *.control
-
-    - name: Create or Update GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: pg_fasttransfer-linux-pg${{ matrix.pg_version }}.zip
-        prerelease: false
-        draft: false
-        overwrite: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+ 

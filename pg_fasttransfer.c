@@ -117,15 +117,15 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     // Variables statiques pour conserver les résultats entre les appels
     static int exit_code = 0;
-    static char result_buffer[65536];
+    //static char result_buffer[65536];
     static long total_rows = -1;
     static int total_columns = -1;
     static long transfer_time = -1;
     static long total_time = -1;
     
     // Remplacer les tableaux statiques "command" par un StringInfo pour une gestion dynamique de la mémoire
-    StringInfo command;
-    StringInfo result_output;
+    StringInfo command = makeStringInfo();
+    StringInfo result_output = makeStringInfo();
 
     // Déclarations de variables déplacées en haut de la fonction pour éviter les avertissements de compilation
     char binary_path[1024];
@@ -195,7 +195,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     
     // Initialiser le StringInfo pour la commande
-    command = makeStringInfo();
     appendStringInfo(command, "%s", binary_path);
 
     ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
@@ -267,15 +266,14 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         if (!fp) {
             ereport(FATAL, (errmsg("pg_fasttransfer: unable to execute FastTransfer. Check the binary path, permissions, and environment variables.")));
         } else {
-            result_output = makeStringInfo();
             while (fgets(buffer, sizeof(buffer), fp) != NULL) {
                 appendStringInfoString(result_output, buffer);
             }
             
             // Copier le contenu du StringInfo dans le tampon statique pour l'analyse
-            strlcpy(result_buffer, result_output->data, sizeof(result_buffer));
-            pfree(result_output->data); // Libère la mémoire allouée par StringInfo
-            pfree(result_output);
+            //strlcpy(result_buffer, result_output->data, sizeof(result_buffer));
+            //pfree(result_output->data); // Libère la mémoire allouée par StringInfo
+            //pfree(result_output);
             
             status = pclose(fp);
 
@@ -335,13 +333,14 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     PG_END_TRY();
     
-    // Libérer la mémoire allouée pour la commande
-    pfree(command->data);
-    pfree(command);
+    /* Libération des StringInfo (ne PAS pfree ->data séparément) */
+    if (command) pfree(command);
+    if (result_output) pfree(result_output);
 
     // Retourner les résultats
     values[0] = Int32GetDatum(exit_code);
-    values[1] = CStringGetTextDatum(result_buffer);
+    //values[1] = CStringGetTextDatum(result_buffer);
+    values[1] = CStringGetTextDatum(result_output->data); // direct
     values[2] = Int64GetDatum(total_rows);
     values[3] = Int32GetDatum(total_columns);
     values[4] = Int64GetDatum(transfer_time);
