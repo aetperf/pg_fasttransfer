@@ -259,69 +259,75 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
 
     ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
     
-    // Exécuter la commande
-    fp = popen(command->data, "r");
-    if (!fp) {
-        snprintf(result_buffer, sizeof(result_buffer), "Error: unable to execute FastTransfer.\n");
-        exit_code = -1;
-    } else {
-        ereport(LOG, (errmsg("commande 10")));
-
-        result_output = makeStringInfo();
-        ereport(LOG, (errmsg("result_output")));
-
-        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-            ereport(LOG, (errmsg(buffer)));
-
-            appendStringInfoString(result_output, buffer);
-        }
-        ereport(LOG, (errmsg("commande 3")));
-        
-        // Copier le contenu du StringInfo dans le tampon statique pour l'analyse
-        strlcpy(result_buffer, result_output->data, sizeof(result_buffer));
-        ereport(LOG, (errmsg("commande 4")));
-        pfree(result_output->data); // Libère la mémoire allouée par StringInfo
-        ereport(LOG, (errmsg("commande 5")));
-        pfree(result_output);
-        
-        status = pclose(fp);
-
-        ereport(LOG, (errmsg("commande executé")));
-        
-        // Analyser les résultats
-        if (result_buffer[0] != '\0') {
-            token = strstr(result_buffer, "Total rows : ");
-            if (token != NULL) {
-                total_rows = strtol(token + strlen("Total rows : "), NULL, 10);
-            }
-            
-            token = strstr(result_buffer, "Total columns : ");
-            if (token != NULL) {
-                total_columns = strtol(token + strlen("Total columns : "), NULL, 10);
-            }
-            
-            token = strstr(result_buffer, "Transfert time : Elapsed");
-            if (token != NULL) {
-                transfer_time = strtol(token + strlen("Transfert time : Elapsed="), NULL, 10);
-            }
-            
-            token = strstr(result_buffer, "Total time : Elapsed=");
-            if (token != NULL) {
-                total_time = strtol(token + strlen("Total time : Elapsed="), NULL, 10);
-            }
-        }
-        
-#ifdef _WIN32
-        exit_code = status;
-#else
-        if (WIFEXITED(status)) {
-            exit_code = WEXITSTATUS(status);
+    // Exécuter la commande avec gestion d'erreurs
+    PG_TRY();
+    {
+       fp = popen(command->data, "r");
+        if (!fp) {
+            snprintf(result_buffer, sizeof(result_buffer), "Error: unable to execute FastTransfer.\n");
+            exit_code = -1;
         } else {
-            exit_code = -2;
-            strncat(result_buffer, "\nUnknown error of FastTransfer\n", sizeof(result_buffer) - strlen(result_buffer) - 1);
-        }
+            result_output = makeStringInfo();
+            while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+                appendStringInfoString(result_output, buffer);
+            }
+            
+            // Copier le contenu du StringInfo dans le tampon statique pour l'analyse
+            strlcpy(result_buffer, result_output->data, sizeof(result_buffer));
+            pfree(result_output->data); // Libère la mémoire allouée par StringInfo
+            pfree(result_output);
+            
+            status = pclose(fp);
+
+            // Analyser le code de sortie
+#ifdef _WIN32
+            exit_code = status;
+#else
+            if (WIFEXITED(status)) {
+                exit_code = WEXITSTATUS(status);
+            } else {
+                exit_code = -2;
+                strncat(result_buffer, "\nUnknown error of FastTransfer\n", sizeof(result_buffer) - strlen(result_buffer) - 1);
+            }
 #endif
+    
+            // Journaliser le code de sortie pour le débogage
+            ereport(LOG, (errmsg("pg_fasttransfer: Process exited with status code: %d", exit_code)));
+            
+            // Analyser les résultats
+            if (result_buffer[0] != '\0') {
+                token = strstr(result_buffer, "Total rows : ");
+                if (token != NULL) {
+                    total_rows = strtol(token + strlen("Total rows : "), NULL, 10);
+                }
+                
+                token = strstr(result_buffer, "Total columns : ");
+                if (token != NULL) {
+                    total_columns = strtol(token + strlen("Total columns : "), NULL, 10);
+                }
+                
+                token = strstr(result_buffer, "Transfert time : Elapsed");
+                if (token != NULL) {
+                    transfer_time = strtol(token + strlen("Transfert time : Elapsed="), NULL, 10);
+                }
+                
+                token = strstr(result_buffer, "Total time : Elapsed=");
+                if (token != NULL) {
+                    total_time = strtol(token + strlen("Total time : Elapsed="), NULL, 10);
+                }
+            }
+        }
     }
+    PG_CATCH();
+    {
+        // Une erreur s'est produite, probablement due à FastTransfer
+        // Journaliser le message d'erreur et définir le code de sortie sur -3
+        exit_code = -3;
+        ereport(LOG, (errmsg("pg_fasttransfer: An exception occurred during execution of FastTransfer. The process likely crashed.")));
+        ereport(LOG, (errmsg("pg_fasttransfer: Process exited with status code: %d", exit_code)));
+        strlcpy(result_buffer, "An internal error occurred during data transfer. Check PostgreSQL logs for details.\n", sizeof(result_buffer));
+    }
+    PG_END_TRY();
     
     // Libérer la mémoire allouée pour la commande
     pfree(command->data);
@@ -338,6 +344,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     tuple = heap_form_tuple(tupdesc, values, nulls);
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
+
 
 //###########################################################################################
 //## Encrypt Function
