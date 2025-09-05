@@ -1,12 +1,28 @@
+/*
+ * PostgreSQL 17.5 Windows MSVC Compatibility Fix
+ * The duplicate case 4 error occurs because sizeof(Datum) == sizeof(int32) == 4
+ */
+
 #ifdef _WIN32
 
+// Critical: Define SIZEOF_DATUM BEFORE including PostgreSQL headers
+// This must match how PostgreSQL was built
 #ifdef _MSC_VER
-// CRITICAL FIX for PostgreSQL 17 compilation on Windows with MSVC:
-// There's a conflict in memory context enums causing "case value '4' already used" error in tupmacs.h
-// This MUST be defined BEFORE any includes to prevent the enum conflict
-#undef MCTX_ALIGNED_REDIRECT_ID
-#define MCTX_ALIGNED_REDIRECT_ID 5
+// Allow build script to override these values
+#ifndef SIZEOF_DATUM
+    // Default to 64-bit, but build script will set correct value
+    #define SIZEOF_DATUM 8
 #endif
+#ifndef SIZEOF_VOID_P
+    #define SIZEOF_VOID_P 8  // 8 for 64-bit, 4 for 32-bit
+#endif
+
+// Additional defines for 64-bit builds
+#if SIZEOF_DATUM == 8
+    #define USE_FLOAT8_BYVAL 1
+    #define FLOAT8PASSBYVAL true
+#endif
+#endif // _MSC_VER
 
 // Define PGDLLIMPORT before any includes
 #define PGDLLIMPORT __declspec(dllimport)
@@ -21,20 +37,22 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-// Include Windows headers first
+// Windows-specific includes - order matters!
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
 #include <process.h>
 
+// Windows compatibility defines
 #define popen _popen
 #define pclose _pclose
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
 
-#endif
+#endif // _WIN32
 
+// NOW include PostgreSQL headers
 #include "postgres.h"
 #include "fmgr.h"
 #include "utils/builtins.h"
@@ -43,6 +61,11 @@
 #include "funcapi.h"
 #include "utils/rel.h"
 
+#ifdef PG_MODULE_MAGIC
+PG_MODULE_MAGIC;
+#endif
+
+// Standard C includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,17 +76,14 @@
 #include <signal.h>
 #endif
 
+// Binary name definition
 #ifdef _WIN32
 #define BINARY_NAME "FastTransfer.exe"
 #else
 #define BINARY_NAME "FastTransfer"
 #endif
 
-#ifdef PG_MODULE_MAGIC
-PG_MODULE_MAGIC;
-#endif
-
-// Clé symétrique partagée pour le chiffrement/déchiffrement
+// Encryption key for secure password handling
 static const char *PGFT_ENCRYPTION_KEY = "key";
 
 //###########################################################################################

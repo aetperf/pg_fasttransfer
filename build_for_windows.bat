@@ -37,6 +37,19 @@ echo PostgreSQL include server: %PG_INCLUDE_SERVER%
 echo PostgreSQL lib: %PG_LIB%
 echo.
 
+REM Detect PostgreSQL architecture to set correct SIZEOF_DATUM
+echo Detecting PostgreSQL architecture...
+for /f "tokens=*" %%i in ('pg_config --configure') do set PG_CONFIG_OUTPUT=%%i
+echo %PG_CONFIG_OUTPUT% | findstr /C:"x86_64" >nul
+if %errorlevel% == 0 (
+    echo Building for 64-bit PostgreSQL
+    set DATUM_SIZE=8
+    set VOID_P_SIZE=8
+) else (
+    echo Building for 32-bit PostgreSQL  
+    set DATUM_SIZE=4
+    set VOID_P_SIZE=4
+)
 
 REM Clean previous build
 echo Cleaning previous build...
@@ -45,16 +58,16 @@ del pg_fasttransfer.dll >nul 2>&1
 del pg_fasttransfer.lib >nul 2>&1
 del pg_fasttransfer.exp >nul 2>&1
 
-REM Compile the object file
+REM Compile the object file with SIZEOF_DATUM fix for PostgreSQL 17
 echo Compiling pg_fasttransfer.c...
-REM Try to work around PostgreSQL 17 enum conflict
 cl /c /MD /O2 /W1 /nologo ^
     /I. ^
     /I"%PG_INCLUDE_SERVER%" ^
     /I"%PG_INCLUDE%" ^
     /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
+    /DSIZEOF_DATUM=%DATUM_SIZE% ^
+    /DSIZEOF_VOID_P=%VOID_P_SIZE% ^
     /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX ^
-    /DMCTX_ALIGNED_REDIRECT_ID=5 ^
     /wd4005 /wd4996 /wd4141 /wd4090 /wd4244 /wd4267 ^
     pg_fasttransfer.c
 
@@ -81,16 +94,41 @@ if %errorlevel% neq 0 (
 REM Install files
 echo Installing extension files...
 copy pg_fasttransfer.dll "%PG_PKGLIB%\" >nul
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to copy DLL to %PG_PKGLIB%
+    echo Please check permissions or run as administrator
+    pause
+    exit /b 1
+)
+
 copy pg_fasttransfer.control "%PG_SHARE%\extension\" >nul
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to copy control file to %PG_SHARE%\extension\
+    echo Please check permissions or run as administrator
+    pause
+    exit /b 1
+)
+
 copy pg_fasttransfer--1.0.sql "%PG_SHARE%\extension\" >nul
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to copy SQL file to %PG_SHARE%\extension\
+    echo Please check permissions or run as administrator
+    pause
+    exit /b 1
+)
 
 echo.
 echo ============================================
 echo   Build completed successfully!
 echo ============================================
 echo.
+echo Extension files installed:
+echo   - DLL: %PG_PKGLIB%\pg_fasttransfer.dll
+echo   - Control: %PG_SHARE%\extension\pg_fasttransfer.control
+echo   - SQL: %PG_SHARE%\extension\pg_fasttransfer--1.0.sql
+echo.
 echo After restarting PostgreSQL, you can test with:
-echo CREATE EXTENSION pg_fasttransfer;
-echo SELECT * FROM pg_fasttransfer();
+echo   CREATE EXTENSION pg_fasttransfer;
+echo   SELECT * FROM pg_fasttransfer_encrypt('test');
 echo.
 pause
