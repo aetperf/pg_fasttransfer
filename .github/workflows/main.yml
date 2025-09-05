@@ -11,7 +11,7 @@ jobs:
   
     strategy:
       matrix:
-        pg_version: ['17']
+        pg_version: ['15','16','17']
       
     steps:
     - name: Checkout repository
