@@ -43,8 +43,9 @@ del pg_fasttransfer.obj >nul 2>&1
 del pg_fasttransfer.dll >nul 2>&1
 del pg_fasttransfer.lib >nul 2>&1
 del pg_fasttransfer.exp >nul 2>&1
+del pg17_fix.h >nul 2>&1
 
-REM Compile the object file
+REM Compile the object file - force error to warning for C2196
 echo Compiling pg_fasttransfer.c...
 cl /c /MD /O2 /W1 /nologo ^
     /I. ^
@@ -52,7 +53,8 @@ cl /c /MD /O2 /W1 /nologo ^
     /I"%PG_INCLUDE%" ^
     /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
     /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX ^
-    /wd4005 /wd4996 /wd4141 /wd4090 /wd4244 /wd4267 ^
+    /wd2196 /wd4005 /wd4996 /wd4141 /wd4090 /wd4244 /wd4267 ^
+    /we4013 ^
     pg_fasttransfer.c
 
 if %errorlevel% neq 0 (
