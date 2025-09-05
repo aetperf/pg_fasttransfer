@@ -11,7 +11,7 @@ jobs:
   
     strategy:
       matrix:
-        pg_version: ['15', '16', '17']
+        pg_version: ['17']
       
     steps:
     - name: Checkout repository
@@ -37,7 +37,7 @@ jobs:
         $S = Join-Path $ROOT "pgsql\include\server"
         $L = Join-Path $ROOT "pgsql\lib"
   
-        & cl.exe /LD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
+        & cl.exe /LD /GS /MD /Fe:pg_fasttransfer.dll pg_fasttransfer.c `
           /I"$ROOT" `
           /I"$I" `
           /I"$S" `
