@@ -1,19 +1,12 @@
 /*
  * PostgreSQL 17.5 Windows MSVC Compatibility Fix
- * The duplicate case 4 error occurs because sizeof(Datum) == sizeof(int32) == 4
  */
 
 #ifdef _WIN32
 #ifdef _MSC_VER
 
-// CRITICAL FIX: Disable the conflicting switch cases in tupmacs.h
-// by making SIZEOF_DATUM not equal to 8, which prevents the 
-// duplicate "case sizeof(Datum):" from being compiled
-#define SIZEOF_DATUM 4  // Force to 4 to disable the extra case
-#define SIZEOF_VOID_P 4
-
-// Note: This is a workaround - PostgreSQL will still work correctly
-// because the sizeof(int32) case handles 4-byte Datums
+// Include our fix FIRST before anything else
+#include "pg17_fix.h"
 
 #endif // _MSC_VER
 
