@@ -71,23 +71,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Add PostgreSQL APT Repository
-      run: |
-        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-        
     - name: Install PostgreSQL Development Libraries
       run: |
         sudo apt-get update
         sudo apt-get install -y postgresql-server-dev-${{ matrix.pg_version }}
 
     - name: Compile pg_fasttransfer for PG ${{ matrix.pg_version }}
-      run: |
-        gcc -fPIC -shared -o pg_fasttransfer.so pg_fasttransfer.c `
-        -I$(pg_config --includedir) `
-        -I$(pg_config --includedir-server) `
-        -L$(pg_config --libdir) `
-        -lpostgres
+        run: make USE_PGXS=1
         
     - name: Create Release Archive for PG ${{ matrix.pg_version }}
       run: tar -czf pg_fasttransfer-linux-pg${{ matrix.pg_version }}.tar.gz pg_fasttransfer.so *.sql *.control
