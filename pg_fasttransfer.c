@@ -1,12 +1,15 @@
+// Fix for PostgreSQL 17 Windows compilation - define PGDLLIMPORT first
 #ifdef _WIN32
 #define PGDLLIMPORT __declspec(dllimport)
 #endif
+
 // Version Windows plus sûre qui évite les fonctions mémoire PostgreSQL problématiques
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+// Include Windows headers before PostgreSQL headers to avoid conflicts
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -19,6 +22,7 @@
 #endif
 #endif
 
+// Now include PostgreSQL headers
 #include "postgres.h"
 #include "fmgr.h"
 #include "utils/builtins.h"

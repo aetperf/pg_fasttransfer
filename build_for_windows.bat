@@ -53,7 +53,7 @@ cl /c /MD /O2 /W1 /nologo ^
     /I"%PG_INCLUDE%" ^
     /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
     /D_CRT_SECURE_NO_WARNINGS ^
-    /wd4005 /wd4996 ^
+    /wd4005 /wd4996 /wd4141 /wd4090 /wd4244 /wd4267 ^
     pg_fasttransfer.c
 
 if %errorlevel% neq 0 (
