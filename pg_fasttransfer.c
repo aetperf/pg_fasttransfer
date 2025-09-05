@@ -1,5 +1,13 @@
-// Fix for PostgreSQL 17 Windows compilation
 #ifdef _WIN32
+
+#ifdef _MSC_VER
+// CRITICAL FIX for PostgreSQL 17 compilation on Windows with MSVC:
+// There's a conflict in memory context enums causing "case value '4' already used" error in tupmacs.h
+// This MUST be defined BEFORE any includes to prevent the enum conflict
+#undef MCTX_ALIGNED_REDIRECT_ID
+#define MCTX_ALIGNED_REDIRECT_ID 5
+#endif
+
 // Define PGDLLIMPORT before any includes
 #define PGDLLIMPORT __declspec(dllimport)
 
@@ -23,14 +31,6 @@
 #define pclose _pclose
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
-#endif
-
-// CRITICAL FIX for PostgreSQL 17 on Windows:
-// There's a conflict in memory context enums causing duplicate case value '4'
-// We need to prevent the conflicting definition
-#ifdef _MSC_VER
-// Force enum value to avoid conflict
-#define MCTX_ALIGNED_REDIRECT_ID 5
 #endif
 
 #endif
