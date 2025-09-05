@@ -1,15 +1,19 @@
-// Fix for PostgreSQL 17 Windows compilation - define PGDLLIMPORT first
+// Fix for PostgreSQL 17 Windows compilation
 #ifdef _WIN32
+// Define PGDLLIMPORT before any includes
 #define PGDLLIMPORT __declspec(dllimport)
+
+// Prevent Windows.h from defining min/max macros that conflict
+#ifndef NOMINMAX
+#define NOMINMAX
 #endif
 
-// Version Windows plus sûre qui évite les fonctions mémoire PostgreSQL problématiques
-#ifdef _WIN32
+// Use lean Windows headers
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-// Include Windows headers before PostgreSQL headers to avoid conflicts
+// Include Windows headers first
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -20,9 +24,17 @@
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
+
+// CRITICAL FIX for PostgreSQL 17 on Windows:
+// There's a conflict in memory context enums causing duplicate case value '4'
+// We need to prevent the conflicting definition
+#ifdef _MSC_VER
+// Force enum value to avoid conflict
+#define MCTX_ALIGNED_REDIRECT_ID 5
 #endif
 
-// Now include PostgreSQL headers
+#endif
+
 #include "postgres.h"
 #include "fmgr.h"
 #include "utils/builtins.h"

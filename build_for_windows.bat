@@ -47,12 +47,14 @@ del pg_fasttransfer.exp >nul 2>&1
 
 REM Compile the object file
 echo Compiling pg_fasttransfer.c...
+REM Try to work around PostgreSQL 17 enum conflict
 cl /c /MD /O2 /W1 /nologo ^
     /I. ^
     /I"%PG_INCLUDE_SERVER%" ^
     /I"%PG_INCLUDE%" ^
     /DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0600 ^
-    /D_CRT_SECURE_NO_WARNINGS ^
+    /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX ^
+    /DMCTX_ALIGNED_REDIRECT_ID=5 ^
     /wd4005 /wd4996 /wd4141 /wd4090 /wd4244 /wd4267 ^
     pg_fasttransfer.c
 
