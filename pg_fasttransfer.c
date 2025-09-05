@@ -1,22 +1,22 @@
 /*
  * PostgreSQL 17.5 Windows MSVC Compatibility Fix
- * The duplicate case 4 error occurs because sizeof(Datum) == sizeof(int32) == 4
+ * Work around duplicate case value error in tupmacs.h
  */
 
 #ifdef _WIN32
 #ifdef _MSC_VER
 
-// CRITICAL: Suppress the duplicate case value error in tupmacs.h
-#pragma warning(push)
-#pragma warning(disable: 2196)  // C2196: case value 'X' already used
-
-// Force specific size values
+// Critical: Define a macro that makes the problematic case statements disappear
+// This works by making SIZEOF_DATUM != 8, which disables the duplicate case
 #define SIZEOF_DATUM 4
-#define SIZEOF_VOID_P 8
+
+// Also handle the inline functions that cause issues
+#define fetch_att pg_fetch_att_fixed
+#define store_att_byval pg_store_att_byval_fixed
 
 #endif // _MSC_VER
 
-// Define PGDLLIMPORT before any includes
+// Define PGDLLIMPORT before other includes
 #define PGDLLIMPORT __declspec(dllimport)
 
 // Prevent Windows.h from defining min/max macros that conflict
@@ -44,11 +44,49 @@
 
 #endif // _WIN32
 
-// NOW include PostgreSQL headers - with error suppression active
+// NOW include PostgreSQL headers
 #include "postgres.h"
 
 #ifdef _MSC_VER
-#pragma warning(pop)  // Re-enable the warning after including postgres.h
+// After including postgres.h, provide fixed versions of the functions
+#undef fetch_att
+#undef store_att_byval
+
+static inline Datum
+fetch_att(const void *T, bool attbyval, int attlen)
+{
+    if (!attbyval)
+        return PointerGetDatum(T);
+    
+    // Use if-else instead of switch to avoid duplicate case
+    if (attlen == sizeof(char))
+        return CharGetDatum(*((const char *) T));
+    else if (attlen == sizeof(int16))
+        return Int16GetDatum(*((const int16 *) T));
+    else if (attlen == sizeof(int32))
+        return Int32GetDatum(*((const int32 *) T));
+    else if (attlen == 8)
+        return *((const Datum *) T);
+    else
+        elog(ERROR, "unsupported byval length: %d", attlen);
+    return 0;
+}
+
+static inline void
+store_att_byval(void *T, Datum newdatum, int attlen)
+{
+    // Use if-else instead of switch to avoid duplicate case
+    if (attlen == sizeof(char))
+        *(char *) T = DatumGetChar(newdatum);
+    else if (attlen == sizeof(int16))
+        *(int16 *) T = DatumGetInt16(newdatum);
+    else if (attlen == sizeof(int32))
+        *(int32 *) T = DatumGetInt32(newdatum);
+    else if (attlen == 8)
+        *(Datum *) T = newdatum;
+    else
+        elog(ERROR, "unsupported byval length: %d", attlen);
+}
 #endif
 
 #include "fmgr.h"
