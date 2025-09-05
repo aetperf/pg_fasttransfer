@@ -61,40 +61,42 @@ jobs:
 
 
   build-linux:
-    runs-on: ubuntu-latest
+  runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        pg_version: ['15','16','17']
+  strategy:
+    matrix:
+      pg_version: ['15','16','17']
 
-    steps:
+  steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Install PostgreSQL Development Libraries
       run: |
         sudo apt-get update
-        sudo apt-get install -y wget gnupg2 lsb-release
+        sudo apt-get install -y wget gnupg2 lsb-release zip
         echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
         wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
         sudo apt-get update
         sudo apt-get install -y postgresql-server-dev-${{ matrix.pg_version }}
 
-
     - name: Compile pg_fasttransfer for PG ${{ matrix.pg_version }}
-      run: make USE_PGXS=1
-        
+      run: |
+        make USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/${{ matrix.pg_version }}/bin/pg_config
+
     - name: Create Release Archive for PG ${{ matrix.pg_version }}
-      run: tar -czf pg_fasttransfer-linux-pg${{ matrix.pg_version }}.tar.gz pg_fasttransfer.so *.sql *.control
+      run: |
+        zip pg_fasttransfer-linux-pg${{ matrix.pg_version }}.zip pg_fasttransfer.so *.sql *.control
 
     - name: Create or Update GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: pg_fasttransfer-linux-pg${{ matrix.pg_version }}.tar.gz
+        files: pg_fasttransfer-linux-pg${{ matrix.pg_version }}.zip
         prerelease: false
         draft: false
         overwrite: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
  
