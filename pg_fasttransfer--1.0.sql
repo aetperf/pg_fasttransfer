@@ -1,5 +1,4 @@
--- Extension for encrypting and decrypting
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 
 
 -- Safe version of pg_fasttransfer function with full parameter support

@@ -195,8 +195,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     appendStringInfo(command, "%s", binary_path);
 
-    ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
-
     
     for (i = 0; i < 33; i++) {
 
@@ -254,8 +252,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     
     appendStringInfo(command, " 2>&1");
     
-    // Log the full command before execution
-    ereport(LOG, (errmsg("pg_fasttransfer: Final command to be executed: %s", command->data)));
     
     // Exécuter la commande avec gestion d'erreurs
     PG_TRY();
@@ -284,9 +280,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
 #endif
     
            
-    
-            // Journaliser le code de sortie pour le débogage
-            ereport(LOG, (errmsg("pg_fasttransfer: Process exited with status code: %d", exit_code)));
             
             /* Parsing sûr de la sortie : on recherche des labels et on utilise strtol avec endptr */
             char *out = result_output->data;
@@ -344,8 +337,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         MemoryContext oldcxt = MemoryContextSwitchTo(ErrorContext);
         errdata = CopyErrorData();
         MemoryContextSwitchTo(oldcxt);
-        /* log l'erreur */
-        ereport(LOG, (errmsg("pg_fasttransfer: exception caught during execution: %s", errdata->message)));
+
         FreeErrorData(errdata);
 
         /* Sécuriser exit code et message */
