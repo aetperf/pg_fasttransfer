@@ -47,7 +47,7 @@ jobs:
     - name: Create Release Archive for PG ${{ matrix.pg_version }}
       shell: pwsh
       run: |
-        Compress-Archive -Path pg_fasttransfer.dll, *.sql, *.control -DestinationPath pg_fasttransfer-windows-pg${{ matrix.pg_version }}.zip
+        Compress-Archive -Path pg_fasttransfer.dll, *.sql, *.control, install/install-win.bat -DestinationPath pg_fasttransfer-windows-pg${{ matrix.pg_version }}.zip
   
     - name: Create or Update GitHub Release
       uses: softprops/action-gh-release@v2
