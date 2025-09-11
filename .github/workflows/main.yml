@@ -11,7 +11,7 @@ jobs:
   
     strategy:
       matrix:
-        pg_version: ['15','16','17']
+        pg_version: ['16','17']
       
     steps:
     - name: Checkout repository
@@ -87,7 +87,7 @@ jobs:
 
       - name: Create Release Archive for PG ${{ matrix.pg_version }}
         run: |
-          zip pg_fasttransfer-linux-pg${{ matrix.pg_version }}.zip pg_fasttransfer.so *.sql *.control
+          zip -j pg_fasttransfer-linux-pg${{ matrix.pg_version }}.zip pg_fasttransfer.so *.sql *.control install/install-linux.sh
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
