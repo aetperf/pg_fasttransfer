@@ -187,11 +187,6 @@ CREATE EXTENSION pg_fasttransfer;
 
 ---
 
-### Linux
-
-*(Instructions will be added later — not yet implemented.)*
-
----
 
 ## Function: pg\_fasttransfer\_encrypt
 
