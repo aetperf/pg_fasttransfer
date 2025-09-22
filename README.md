@@ -11,9 +11,10 @@ A PostgreSQL extension to run the [FastTransfer](https://www.arpe.io/fasttransfe
 
 * [FastTransfer Tool Requirement](#fasttransfer-tool-requirement)
 * [Prerequisites](#prerequisites)
+* [Compatibility](#compatibility)
 * [Installation](#installation)
-  * [Windows](#windows)
   * [Linux](#linux)
+  * [Windows](#windows)
 * [SQL Setup](#sql-setup)
 * [Function: pg_fasttransfer_encrypt](#function-pg_fasttransfer_encrypt)
 * [Function: xp_RunFastTransfer_secure Usage](#function-xp_runfasttransfer_secure-usage)
@@ -49,22 +50,92 @@ Before installing `pg_fasttransfer`, make sure you have:
 
 ---
 
-## Installation
+## Compatibility
+
+The **pg_fasttransfer** extension has been tested and validated on the following environments:
 
 ### Windows
+- PostgreSQL **16**  
+- PostgreSQL **17**
 
-There are two methods to install `pg_fasttransfer` on Windows:
+### Linux (Debian/Ubuntu 22.04 LTS)
+- PostgreSQL **15**  
+- PostgreSQL **16**  
+- PostgreSQL **17**
+
+⚠️ Other distributions or PostgreSQL versions may work but have not been officially tested.  
+
+## Installation
+This section covers how to install the **pg_transfer** extension.
+
+### Linux
+
+#### Automated Installation
+The easiest way to install the extension on Linux is by using the `install-linux.sh` script included in the archive.
+
+1. Extract the contents of the archive into a folder. This folder should contain:  
+   - `pg_fasttransfer.so`  
+   - `pg_fasttransfer.control`  
+   - `pg_fasttransfer--1.0.sql`  
+   - `install-linux.sh`  
+
+2. Make the script executable:  
+```bash
+chmod +x install-linux.sh
+````
+
+3. Run the script with administrator privileges:
+
+```bash
+sudo ./install-linux.sh
+```
+
+The script will automatically detect your PostgreSQL installation and copy the files to the correct locations.
+
+#### Manual Installation
+
+If the automated script fails or you prefer to install the files manually, follow these steps:
+
+1. Stop your PostgreSQL service (important to ensure files are not in use):
+
+```bash
+sudo systemctl stop postgresql
+```
+
+2. Locate your PostgreSQL installation directory, typically:
+
+```
+/usr/lib/postgresql/<version>
+```
+
+3. Copy the files into the appropriate directories:
+
+* `pg_fasttransfer.so` → PostgreSQL `lib` directory
+* `pg_fasttransfer.control` and `pg_fasttransfer--1.0.sql` → PostgreSQL `share/extension` directory
+
+Example:
+
+```bash
+sudo cp pg_fasttransfer.so /usr/lib/postgresql/<version>/lib/
+sudo cp pg_fasttransfer.control pg_fasttransfer--1.0.sql /usr/share/postgresql/<version>/extension/
+```
+
+4. Restart your PostgreSQL service:
+
+```bash
+sudo systemctl start postgresql
+```
+
+### Windows
 
 #### Automated Installation
 
 1. Extract the contents of the ZIP file. It should contain:
 ```
-
-pg\_fasttransfer.dll
-pg\_fasttransfer.control
-pg\_fasttransfer--1.0.sql
+pg_fasttransfer.dll
+pg_fasttransfer.control
+pg_fasttransfer--1.0.sql
 install-win.bat
-
 ```
 2. Right-click on `install-win.bat` → **Run as administrator**.  
 3. The script will:
