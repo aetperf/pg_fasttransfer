@@ -159,6 +159,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     int status;
     text *enc;
     char *token;
+    bool debug = false;
 
     #ifndef _WIN32
     signal(SIGPIPE, SIG_IGN);
@@ -168,6 +169,10 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         ereport(ERROR, (errmsg("The function should return a record")));
     
     
+    if (fcinfo->nargs > 34 && !PG_ARGISNULL(34))
+    {
+        debug = PG_GETARG_BOOL(34);
+    }
     
     // Construire le chemin binaire
     if (fcinfo->nargs > 33 && !PG_ARGISNULL(33)) {
@@ -360,7 +365,10 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     // Retourner les résultats
     values[0] = Int32GetDatum(exit_code);
     //values[1] = CStringGetTextDatum(result_buffer);
-    values[1] = CStringGetTextDatum(result_output->data); // direct
+    if (debug)
+        values[1] = CStringGetTextDatum(result_output->data);
+    else
+        values[1] = CStringGetTextDatum("");  // vide si debug=false
 
     values[2] = Int64GetDatum(total_rows);
     values[3] = Int32GetDatum(total_columns);

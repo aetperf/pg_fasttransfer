@@ -36,7 +36,8 @@ CREATE OR REPLACE FUNCTION xp_RunFastTransfer_secure(
     settingsfile text DEFAULT NULL,
     mapmethod text DEFAULT NULL,
     license text DEFAULT NULL,
-    fasttransfer_path text DEFAULT NULL
+    fasttransfer_path text DEFAULT NULL,
+    debug boolean DEFAULT false
 )
 RETURNS TABLE (
     exit_code integer, 
