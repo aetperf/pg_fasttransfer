@@ -115,13 +115,12 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     bool nulls[6] = {false, false, false, false, false, false};
     HeapTuple tuple;
     
-    // Variables statiques pour conserver les résultats entre les appels
-    static int exit_code = 0;
+    int exit_code = 0;
     //static char result_buffer[65536];
-    static long total_rows = -1;
-    static int total_columns = -1;
-    static long transfer_time = -1;
-    static long total_time = -1;
+    long total_rows = -1;
+    int total_columns = -1;
+    long transfer_time = -1;
+    long total_time = -1;
     
     // Remplacer les tableaux statiques "command" par un StringInfo pour une gestion dynamique de la mémoire
     StringInfo command = makeStringInfo();
