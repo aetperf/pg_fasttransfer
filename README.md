@@ -277,7 +277,8 @@ xp_RunFastTransfer_secure(
     settingsfile text DEFAULT NULL,
     mapmethod text DEFAULT NULL,
     license text DEFAULT NULL,
-    fasttransfer_path text DEFAULT NULL
+    fasttransfer_path text DEFAULT NULL,
+    debug boolean DEFAULT FALSE
 ) RETURNS TABLE
 ```
 
@@ -303,7 +304,8 @@ SELECT * FROM xp_RunFastTransfer_secure(
     targettable := 'orders',
     loadmode := 'Truncate',
     license := '/tmp/FastTransfer_linux-x64_v0.13.5/FastTransfer.lic',
-    fasttransfer_path := '/tmp/FastTransfer_linux-x64_v0.13.5'
+    fasttransfer_path := '/tmp/FastTransfer_linux-x64_v0.13.5',
+    debug := true
 );
 ```
 
@@ -333,9 +335,15 @@ SELECT * FROM xp_RunFastTransfer_secure(
     loadmode := 'Truncate',
     batchsize := 1048576,
     mapmethod := 'Position',
-    fasttransfer_path := 'D:\sources\FastTransfer'
+    fasttransfer_path := 'D:\sources\FastTransfer',
+    debug := true
 );
 ```
+
+The `debug` parameter is a **boolean flag** that controls whether the full FastTransfer output is returned in the `output` column.
+
+* When `debug := true`, `output` contains the **entire log** from FastTransfer.
+* When `debug := false` (default), `output` is an empty string, but `error_message` will still contain any error lines.
 
 ---
 
@@ -346,7 +354,8 @@ The function returns a table with the following columns, providing details about
 | Column             | Type    | Description                                     |
 | ------------------ | ------- | ----------------------------------------------- |
 | exit_code         | integer | The exit code of the FastTransfer process.      |
-| output             | text    | The full log output from the FastTransfer tool. |
+| output             | text    | The full log output from the FastTransfer tool if the `debug` parameter is at `TRUE`. |
+| error_message             | text    | Only the lines containing `ERROR` from the FastTransfer output. Empty if no errors occurred. |
 | total_rows        | bigint  | The total number of rows transferred.           |
 | total_columns     | integer | The total number of columns transferred.        |
 | transfer_time_ms | bigint  | Transfer time in milliseconds.                  |
