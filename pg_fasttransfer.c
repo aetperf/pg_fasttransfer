@@ -284,7 +284,8 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             transfer_time = -1;
             total_time = -1;
 
-            char *start = result_output->data;
+            char *copy = pstrdup(result_output->data);  
+            char *start = copy;
             char *end = NULL;
 
             while ((end = strchr(start, '\n')) != NULL) {
@@ -300,6 +301,7 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                 appendStringInfo(error_output, "%s\n", start);
             }
 
+            pfree(copy);
 
 
             if (out && out[0] != '\0') {
