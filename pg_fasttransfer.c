@@ -284,18 +284,23 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             transfer_time = -1;
             total_time = -1;
 
-            char *line = NULL;
-            char *saveptr = NULL;
+            char *start = result_output->data;
+            char *end = NULL;
 
-            line = strtok_r(result_output->data, "\n", &saveptr);
-            while (line != NULL)
-            {
-                if (strstr(line, "ERROR") != NULL) 
-                {
-                    appendStringInfo(error_output, "%s\n", line);
+            while ((end = strchr(start, '\n')) != NULL) {
+                *end = '\0';
+                if (strstr(start, "ERROR") != NULL) {
+                    appendStringInfo(error_output, "%s\n", start);
                 }
-                line = strtok_r(NULL, "\n", &saveptr);
+                start = end + 1;
             }
+
+            // If the last row doesn't have '\n'
+            if (*start != '\0' && strstr(start, "ERROR") != NULL) {
+                appendStringInfo(error_output, "%s\n", start);
+            }
+
+
 
             if (out && out[0] != '\0') {
                 /* Total rows */
