@@ -278,8 +278,13 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             }
 #endif
     
-           
-            
+            if (exit_code != 0) {
+                total_rows = -1;
+                total_columns = -1;
+                transfer_time = -1;
+                total_time = -1;
+            }
+
             /* Parsing sûr de la sortie : on recherche des labels et on utilise strtol avec endptr */
             char *out = result_output->data;
             char *token = NULL;
@@ -341,6 +346,10 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
 
         /* Sécuriser exit code et message */
         exit_code = -3;
+        total_rows = -1;
+        total_columns = -1;
+        transfer_time = -1;
+        total_time = -1;
         /* remplacer la sortie par un message d'erreur minimal */
         resetStringInfo(result_output);
         appendStringInfoString(result_output, "An internal error occurred during data transfer. Check PostgreSQL logs for details.\n");
