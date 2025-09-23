@@ -281,6 +281,12 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             /* Parsing sûr de la sortie : on recherche des labels et on utilise strtol avec endptr */
             char *out = result_output->data;
             char *token = NULL;
+
+            total_rows = -1;
+            total_columns = -1;
+            transfer_time = -1;
+            total_time = -1;
+
             if (out && out[0] != '\0') {
                 /* Total rows */
                 token = strstr(out, "Total rows : ");
@@ -350,12 +356,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     PG_END_TRY();
     
-    if (exit_code != 0) {
-        total_rows = -1;
-        total_columns = -1;
-        transfer_time = -1;
-        total_time = -1;
-    }
 
     // Retourner les résultats
     values[0] = Int32GetDatum(exit_code);
