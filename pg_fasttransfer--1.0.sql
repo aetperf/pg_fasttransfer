@@ -42,6 +42,7 @@ CREATE OR REPLACE FUNCTION xp_RunFastTransfer_secure(
 RETURNS TABLE (
     exit_code integer, 
     output text,
+    error_message text,
     total_rows bigint,
     total_columns integer,
     transfer_time_ms bigint,

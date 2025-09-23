@@ -1,7 +1,7 @@
 #ifdef _WIN32
 #define PGDLLIMPORT __declspec(dllimport)
 #endif
-// Version Windows plus sûre qui évite les fonctions mémoire PostgreSQL problématiques
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -47,14 +47,12 @@
 PG_MODULE_MAGIC;
 #endif
 
-// Clé symétrique partagée pour le chiffrement/déchiffrement
 static const char *PGFT_ENCRYPTION_KEY = "key";
 
 //###########################################################################################
 //## Decrypt C Function
 //###########################################################################################
 
-// --- PROTOTYPES DE FONCTIONS ---
 char *decrypt_password(text *cipher_text, const char *key);
 
 char *decrypt_password(text *cipher_text, const char *key) {
@@ -111,22 +109,20 @@ Datum
 xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
 {
     TupleDesc tupdesc;
-    Datum values[6];
-    bool nulls[6] = {false, false, false, false, false, false};
+    Datum values[7];
+    bool nulls[7] = {false, false, false, false, false, false, false};
     HeapTuple tuple;
     
     int exit_code = 0;
-    //static char result_buffer[65536];
     long total_rows = -1;
     int total_columns = -1;
     long transfer_time = -1;
     long total_time = -1;
     
-    // Remplacer les tableaux statiques "command" par un StringInfo pour une gestion dynamique de la mémoire
     StringInfo command = makeStringInfo();
     StringInfo result_output = makeStringInfo();
+    StringInfo error_output = makeStringInfo();
 
-    // Déclarations de variables déplacées en haut de la fonction pour éviter les avertissements de compilation
     char binary_path[1024];
     const char *arg_names[] = {
         "--sourceconnectiontype", "--sourceconnectstring", "--sourcedsn", "--sourceprovider", "--sourceserver",
@@ -174,7 +170,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
         debug = PG_GETARG_BOOL(34);
     }
     
-    // Construire le chemin binaire
     if (fcinfo->nargs > 33 && !PG_ARGISNULL(33)) {
         pg_path = text_to_cstring(PG_GETARG_TEXT_PP(33));
         #ifdef _WIN32
@@ -257,7 +252,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     appendStringInfo(command, " 2>&1");
     
     
-    // Exécuter la commande avec gestion d'erreurs
     PG_TRY();
     {
        fp = popen(command->data, "r");
@@ -272,18 +266,16 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             status = pclose(fp);
             fp = NULL;
 
-            // Analyser le code de sortie
-#ifdef _WIN32
-            exit_code = status;
-#else
-            if (WIFEXITED(status)) {
-                exit_code = WEXITSTATUS(status);
-            } else {
-                exit_code = -2;
-            }
-#endif
+            #ifdef _WIN32
+                exit_code = status;
+            #else
+                if (WIFEXITED(status)) {
+                    exit_code = WEXITSTATUS(status);
+                } else {
+                    exit_code = -2;
+                }
+            #endif
 
-            /* Parsing sûr de la sortie : on recherche des labels et on utilise strtol avec endptr */
             char *out = result_output->data;
             char *token = NULL;
 
@@ -291,6 +283,19 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
             total_columns = -1;
             transfer_time = -1;
             total_time = -1;
+
+            char *line = NULL;
+            char *saveptr = NULL;
+
+            line = strtok_r(result_output->data, "\n", &saveptr);
+            while (line != NULL)
+            {
+                if (strstr(line, "ERROR") != NULL) 
+                {
+                    appendStringInfo(error_output, "%s\n", line);
+                }
+                line = strtok_r(NULL, "\n", &saveptr);
+            }
 
             if (out && out[0] != '\0') {
                 /* Total rows */
@@ -311,12 +316,11 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
                     if (endptr != p) total_columns = (int)v;
                 }
 
-                /* Transfer time : essayer plusieurs variantes (orthographe) */
+                /* Transfer time  */
                 token = strstr(out, "Transfert time : Elapsed=");
                 if (!token) token = strstr(out, "Transfer time : Elapsed=");
                 if (token) {
                     char *p = token;
-                    /* trouver le signe '=' dans la ligne */
                     char *eq = strchr(p, '=');
                     if (eq) {
                         char *endptr = NULL;
@@ -340,7 +344,6 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     }
     PG_CATCH();
     {
-       /* En cas d'exception PostgreSQL on journalise et on renvoie un message d'erreur simple */
         ErrorData *errdata;
         MemoryContext oldcxt = MemoryContextSwitchTo(ErrorContext);
         errdata = CopyErrorData();
@@ -348,13 +351,12 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
 
         FreeErrorData(errdata);
 
-        /* Sécuriser exit code et message */
         exit_code = -3;
         total_rows = -1;
         total_columns = -1;
         transfer_time = -1;
         total_time = -1;
-        /* remplacer la sortie par un message d'erreur minimal */
+
         resetStringInfo(result_output);
         appendStringInfoString(result_output, "An internal error occurred during data transfer. Check PostgreSQL logs for details.\n");
     
@@ -362,18 +364,16 @@ xp_RunFastTransfer_secure(PG_FUNCTION_ARGS)
     PG_END_TRY();
     
 
-    // Retourner les résultats
     values[0] = Int32GetDatum(exit_code);
-    //values[1] = CStringGetTextDatum(result_buffer);
     if (debug)
         values[1] = CStringGetTextDatum(result_output->data);
     else
-        values[1] = CStringGetTextDatum("");  // vide si debug=false
-
-    values[2] = Int64GetDatum(total_rows);
-    values[3] = Int32GetDatum(total_columns);
-    values[4] = Int64GetDatum(transfer_time);
-    values[5] = Int64GetDatum(total_time);
+        values[1] = CStringGetTextDatum("");  
+    values[2] = CStringGetTextDatum(error_output->data);
+    values[3] = Int64GetDatum(total_rows);
+    values[4] = Int32GetDatum(total_columns);
+    values[5] = Int64GetDatum(transfer_time);
+    values[6] = Int64GetDatum(total_time);
     
     tuple = heap_form_tuple(tupdesc, values, nulls);
 
