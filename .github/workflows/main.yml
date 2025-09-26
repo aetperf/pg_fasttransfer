@@ -11,7 +11,7 @@ jobs:
   
     strategy:
       matrix:
-        pg_version: ['16','17']
+        pg_version: ['16.4','17.4','18.0']
       
     steps:
     - name: Checkout repository
@@ -22,7 +22,7 @@ jobs:
   
     - name: Download PostgreSQL ${{ matrix.pg_version }} binaries
       run: |
-        curl -L -o pgsql.zip https://get.enterprisedb.com/postgresql/postgresql-${{ matrix.pg_version }}.4-1-windows-x64-binaries.zip
+        curl -L -o pgsql.zip https://get.enterprisedb.com/postgresql/postgresql-${{ matrix.pg_version }}-1-windows-x64-binaries.zip
         mkdir pgsql
         tar -xf pgsql.zip -C pgsql --strip-components=1
   
@@ -66,7 +66,7 @@ jobs:
 
     strategy:
       matrix:
-        pg_version: ['15','16','17']
+        pg_version: ['15','16','17','18']
 
     steps:
       - name: Checkout repository
